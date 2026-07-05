@@ -1,12 +1,11 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html>
 <head>
-<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <style>
-    body { margin:0; background:#000; overflow:hidden; touch-action:none; }
-    canvas { display:block; }
-    .btn { position:absolute; bottom:0; width:50%; height:200px; touch-action:none; }
+body { margin:0; background:#000; overflow:hidden; touch-action:none; }
+canvas { display:block; }
+.btn { position:absolute; bottom:0; width:50%; height:200px; touch-action:none; }
 </style>
 </head>
 <body>
@@ -16,108 +15,59 @@
 <script>
 const c = document.getElementById("c");
 const x = c.getContext("2d");
-c.width = window.innerWidth; c.height = window.innerHeight;
+c.width = window.innerWidth;
+c.height = window.innerHeight;
 
 let p = {x:c.width/2-50, y:c.height-150, w:100, h:20};
-let b = {x:c.width/2, y:c.height-170, dx:5, dy:-5, r:15, active:false};
-let w = [], gameOver = false, levelUp = false, showMenu = false, level = 1, maxLevel = 1;
+let b = {x:c.width/2, y:c.height-170, dx:4, dy:-4, r:10, active:false};
+let w = [], level = 1, maxLevel = 1, gameOver = false, levelUp = false, showMenu = false;
 
 function init() {
-    w = []; gameOver = false; levelUp = false; showMenu = false;
-    b.active = false;
-    p.x = c.width/2 - 50;
-    b.x = p.x + p.w/2; b.y = p.y - b.r;
-
-    // Her seviye için özel desen (Pattern)
-    let rows = 6;
-    let cols = 6;
-    let wW = (c.width - 60) / cols;
-    
-    for (let i = 0; i < cols; i++) {
-        for (let j = 0; j < rows; j++) {
-            let shouldAdd = false;
-            // Level'a göre farklı şekiller
-            if (level === 1) shouldAdd = (j === 1); // Tek satır
-            else if (level === 2) shouldAdd = (i % 2 === 0); // Sütunlar
-            else if (level === 3) shouldAdd = (i === j || i + j === 5); // Çarpı
-            else if (level === 4) shouldAdd = (j < 3); // Üst yarım
-            else if (level === 5) shouldAdd = (i === 0 || i === 5 || j === 0 || j === 5); // Çerçeve
-            else if (level === 6) shouldAdd = (i + j) % 2 === 0; // Satranç
-            else if (level === 7) shouldAdd = (j % 2 === 0 && i > 1 && i < 4); // Ortada blok
-            else if (level === 8) shouldAdd = (i > 0 && i < 5 && j > 1 && j < 4); // Büyük kare
-            else if (level === 9) shouldAdd = (i === 2 || i === 3); // Ortada dikey
-            else if (level === 10) shouldAdd = (j === 0 || j === 5 || i === 2 || i === 3); // H harfi
-            else if (level > 10) shouldAdd = Math.random() > 0.4; // 11-20 arası rastgele zor
-
-            if (shouldAdd) {
-                w.push({x: 20 + i * (wW + 5), y: 70 + j * 40, w: wW, h: 20});
-            }
+    w = []; gameOver = false; levelUp = false; showMenu = false; b.active = false;
+    p.x = c.width/2-50; b.x = p.x+50; b.y = p.y-15;
+    for(let i=0; i<5; i++) {
+        for(let j=0; j<4; j++) {
+            if((i+j)%2 === (level%2)) w.push({x:30+i*60, y:50+j*30, w:50, h:20});
         }
     }
 }
 init();
 
-let l=false, r=false;
-document.getElementById("l").addEventListener("touchstart",(e)=>{e.preventDefault(); l=true;});
-document.getElementById("l").addEventListener("touchend",(e)=>{e.preventDefault(); l=false;});
-document.getElementById("r").addEventListener("touchstart",(e)=>{e.preventDefault(); r=true;});
-document.getElementById("r").addEventListener("touchend",(e)=>{e.preventDefault(); r=false;});
+document.getElementById("l").addEventListener("touchstart", (e) => { e.preventDefault(); p.x -= 20; });
+document.getElementById("r").addEventListener("touchstart", (e) => { e.preventDefault(); p.x += 20; });
 
-window.addEventListener("touchstart",(e)=>{
-    let rect = c.getBoundingClientRect();
-    let tx = e.touches[0].clientX - rect.left;
-    let ty = e.touches[0].clientY - rect.top;
-    
+window.addEventListener("touchstart", (e) => {
+    let t = e.touches[0];
     if(showMenu) {
-        let boxSize = 80;
-        let mX = Math.floor((tx - 20) / (boxSize + 10));
-        let mY = Math.floor((ty - 100) / (boxSize + 10));
-        let idx = mY * 3 + mX + 1;
-        if(idx >= 1 && idx <= 20 && idx <= maxLevel) { level = idx; init(); }
-        return;
-    }
-    
-    if(tx < 100 && ty < 60) { showMenu = true; return; }
-    if(levelUp && ty > c.height/2+20 && tx > c.width/2-100 && tx < c.width/2+100) { level++; if(level > maxLevel) maxLevel = level; init(); }
-    else if(gameOver && ty > c.height/2-40 && tx > c.width/2-100 && tx < c.width/2+100) { init(); }
-    else if(!b.active && !gameOver && !levelUp) b.active = true;
+        if(t.clientY > 100) { level = Math.floor((t.clientX/c.width)*5)+1; init(); }
+        else showMenu = false;
+    } else if(t.clientY < 50 && t.clientX < 100) showMenu = true;
+    else if(gameOver || levelUp) init();
+    else b.active = true;
 });
 
 function loop() {
     if(!gameOver && !levelUp && !showMenu) {
-        if(l && p.x>0) p.x-=10;
-        if(r && p.x<c.width-p.w) p.x+=10;
         if(b.active) {
-            b.x+=b.dx + (level*0.1); b.y+=b.dy - (level*0.1);
-            if(b.x<b.r || b.x>c.width-b.r) b.dx*=-1;
-            if(b.y<b.r) b.dy*=-1;
-            if(b.y>p.y-b.r && b.x>p.x && b.x<p.x+p.w) b.dy=-Math.abs(b.dy);
-            w.forEach((v,i)=>{
-                if(b.x>v.x && b.x<v.x+v.w && b.y>v.y && b.y<v.y+v.h) { w.splice(i,1); b.dy*=-1; }
+            b.x += b.dx; b.y += b.dy;
+            if(b.x<0 || b.x>c.width) b.dx *= -1;
+            if(b.y<0) b.dy *= -1;
+            if(b.y > p.y && b.x > p.x && b.x < p.x+p.w) b.dy *= -1;
+            w.forEach((v,i) => {
+                if(b.x > v.x && b.x < v.x+v.w && b.y > v.y && b.y < v.y+v.h) { w.splice(i,1); b.dy *= -1; }
             });
-            if(w.length === 0) { levelUp = true; if(level >= maxLevel) maxLevel = level + 1; }
-            if(b.y>c.height) gameOver = true;
-        } else { b.x=p.x+p.w/2; b.y=p.y-b.r; }
+            if(w.length === 0) levelUp = true;
+            if(b.y > c.height) gameOver = true;
+        } else { b.x = p.x+50; }
     }
     x.clearRect(0,0,c.width,c.height);
     x.fillStyle="white"; x.fillRect(p.x,p.y,p.w,p.h);
-    x.fillStyle="red"; x.beginPath(); x.arc(b.x,b.y,b.r,0,Math.PI*2); x.fill();
-    x.fillStyle="cyan"; w.forEach(v=>x.fillRect(v.x,v.y,v.w,v.h));
-    x.fillStyle="white"; x.font="30px Arial"; x.fillText("MENU", 20, 40);
-    x.font="20px Arial"; x.fillText("Lvl: "+level, c.width-60, 30);
+    x.fillStyle="red"; x.beginPath(); x.arc(b.x,b.y,b.r,0,7); x.fill();
+    x.fillStyle="cyan"; w.forEach(v => x.fillRect(v.x,v.y,v.w,v.h));
     
-    if(showMenu) {
-        x.fillStyle="black"; x.fillRect(0,0,c.width,c.height);
-        x.fillStyle="white"; x.fillText("SEVIYE SEC", c.width/2, 50);
-        for(let i=0; i<20; i++) {
-            x.fillStyle = (i < maxLevel) ? "#444" : "#222";
-            x.fillRect(20+(i%3)*90, 100+Math.floor(i/3)*90, 80, 80);
-            x.fillStyle = (i < maxLevel) ? "white" : "#555";
-            x.fillText(i+1, 60+(i%3)*90, 150+Math.floor(i/3)*90);
-        }
-    }
-    if(gameOver) { x.fillStyle="blue"; x.fillRect(c.width/2-100, c.height/2-40, 200, 80); x.fillStyle="white"; x.fillText("TRY AGAIN", c.width/2, c.height/2+10); }
-    if(levelUp) { x.fillStyle="green"; x.fillRect(c.width/2-100, c.height/2-40, 200, 140); x.fillStyle="white"; x.fillText("LEVEL UP!", c.width/2, c.height/2); x.fillStyle="yellow"; x.fillRect(c.width/2-100, c.height/2+20, 200, 60); x.fillStyle="black"; x.fillText("DEVAM", c.width/2, c.height/2+60); }
+    if(gameOver) x.fillText("TRY AGAIN", c.width/2-30, c.height/2);
+    if(levelUp) x.fillText("LEVEL UP", c.width/2-30, c.height/2);
+    if(showMenu) x.fillText("MENU", c.width/2-20, 50);
     requestAnimationFrame(loop);
 }
 loop();
