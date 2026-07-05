@@ -1,79 +1,100 @@
 <!DOCTYPE html>
-<html>
+<html lang="tr">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Top Yakala Pro</title>
-<style>
-  body { margin: 0; background: #111; overflow: hidden; touch-action: none; font-family: sans-serif; }
-  canvas { display: block; background: #222; width: 100vw; height: 100vh; }
-  #score { position: absolute; top: 50px; left: 20px; color: #fff; font-size: 32px; font-weight: bold; }
-  .btn { position: absolute; bottom: 40px; width: 42%; height: 85px; border: none; border-radius: 20px; background: #333; display: flex; align-items: center; justify-content: center; z-index: 10; }
-  #left { left: 5%; }
-  #right { right: 5%; }
-</style>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Top Yakala Pro - Duvar Modu</title>
+    <style>
+        body { margin: 0; background: #111; overflow: hidden; touch-action: none; font-family: sans-serif; }
+        canvas { display: block; background: #222; width: 100vw; height: 100vh; }
+        #score { position: absolute; top: 50px; left: 20px; color: #fff; font-size: 24px; font-weight: bold; z-index: 10; pointer-events: none; }
+        .btn { position: absolute; bottom: 40px; width: 42%; height: 85px; border: none; border-radius: 20px; background: #333; display: flex; align-items: center; justify-content: center; z-index: 10; }
+        #left { left: 5%; }
+        #right { right: 5%; }
+    </style>
 </head>
 <body>
 
-<div id="score">Puan: 0</div>
-<canvas id="game"></canvas>
+    <div id="score">Puan: 0</div>
+    <canvas id="game"></canvas>
 
-<button id="left" class="btn"><svg width="40" height="40" viewBox="0 0 24 24" fill="white"><path d="M15.5 19l-7-7 7-7v14z"/></svg></button>
-<button id="right" class="btn"><svg width="40" height="40" viewBox="0 0 24 24" fill="white"><path d="M8.5 5l7 7-7 7V5z"/></svg></button>
+    <button id="left" class="btn"><svg width="40" height="40" viewBox="0 0 24 24" fill="white"><path d="M15.5 19l-7-7 7-7v14z"/></svg></button>
+    <button id="right" class="btn"><svg width="40" height="40" viewBox="0 0 24 24" fill="white"><path d="M8.5 5l7 7-7 7V5z"/></svg></button>
 
-<script>
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+    <script>
+        const canvas = document.getElementById("game");
+        const ctx = canvas.getContext("2d");
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
 
-// Müzik ayarı
-const bgMusic = new Audio("https://pub-c5e31b5cdafb419a96a6111d297ca13e.r2.dev/main-theme.mp3");
-bgMusic.loop = true;
-bgMusic.volume = 0.4;
-let musicStarted = false;
+        const bgMusic = new Audio("https://pub-c5e31b5cdafb419a96a6111d297ca13e.r2.dev/main-theme.mp3");
+        bgMusic.loop = true; bgMusic.volume = 0.4;
+        let musicStarted = false;
 
-function startMusic() {
-  if (!musicStarted) {
-    bgMusic.play().catch(e => console.log("Müzik bekleniyor..."));
-    musicStarted = true;
-  }
-}
+        function startMusic() { if (!musicStarted) { bgMusic.play().catch(e => {}); musicStarted = true; } }
 
-let score = 0;
-let player = { x: canvas.width/2 - 55, y: canvas.height - 180, w: 110, h: 16, speed: 9 };
-let ball = { x: canvas.width/2, y: 150, r: 15, speedX: 5, speedY: 6 };
-let left = false, right = false;
+        let score = 0;
+        let player = { x: canvas.width/2 - 55, y: canvas.height - 180, w: 110, h: 16, speed: 10 };
+        let ball = { x: canvas.width/2, y: 300, r: 12, speedX: 5, speedY: 5 };
+        let left = false, right = false;
+        
+        // Duvarlar
+        let walls = [];
+        function initWalls() {
+            walls = [];
+            let w = (canvas.width - 40) / 10;
+            for(let i=0; i<10; i++) {
+                walls.push({ x: 20 + i*w, y: 80, w: w-4, h: 20, color: `hsl(${i*36}, 100%, 50%)` });
+            }
+        }
+        initWalls();
 
-function hold(btn, dir) {
-  btn.addEventListener("touchstart", (e) => { e.preventDefault(); startMusic(); if(dir==="left") left=true; if(dir==="right") right=true; });
-  btn.addEventListener("touchend", (e) => { e.preventDefault(); if(dir==="left") left=false; if(dir==="right") right=false; });
-}
-hold(document.getElementById("left"), "left");
-hold(document.getElementById("right"), "right");
+        function hold(id, dir) {
+            const btn = document.getElementById(id);
+            btn.addEventListener("touchstart", (e) => { e.preventDefault(); startMusic(); if(dir==="left") left=true; else right=true; });
+            btn.addEventListener("touchend", (e) => { e.preventDefault(); if(dir==="left") left=false; else right=false; });
+        }
+        hold("left", "left"); hold("right", "right");
 
-function update() {
-  if(left) player.x -= player.speed;
-  if(right) player.x += player.speed;
-  if(player.x < 0) player.x = 0;
-  if(player.x + player.w > canvas.width) player.x = canvas.width - player.w;
-  ball.x += ball.speedX; ball.y += ball.speedY;
-  if(ball.x <= ball.r || ball.x >= canvas.width - ball.r) ball.speedX *= -1;
-  if(ball.y <= ball.r) ball.speedY *= -1;
-  if(ball.y >= canvas.height - ball.r) { score=0; document.getElementById("score").innerText = "Puan: 0"; ball.x = canvas.width/2; ball.y = 150; }
-  if(ball.y + ball.r >= player.y && ball.y - ball.r <= player.y + player.h && ball.x >= player.x && ball.x <= player.x + player.w && ball.speedY > 0) {
-    score++; document.getElementById("score").innerText = "Puan: " + score;
-    ball.speedY *= -1.05; ball.speedX *= 1.05;
-  }
-}
+        function update() {
+            if(left) player.x -= player.speed;
+            if(right) player.x += player.speed;
+            if(player.x < 0) player.x = 0;
+            if(player.x + player.w > canvas.width) player.x = canvas.width - player.w;
 
-function loop() {
-  ctx.clearRect(0,0, canvas.width, canvas.height);
-  ctx.fillStyle = "lime"; ctx.fillRect(player.x, player.y, player.w, player.h);
-  ctx.fillStyle = "red"; ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2); ctx.fill();
-  update(); requestAnimationFrame(loop);
-}
-loop();
-</script>
+            ball.x += ball.speedX; ball.y += ball.speedY;
+
+            if(ball.x <= ball.r || ball.x >= canvas.width - ball.r) ball.speedX *= -1;
+            if(ball.y <= ball.r) ball.speedY *= -1;
+            
+            // Duvar çarpışması
+            for(let i=0; i<walls.length; i++) {
+                let w = walls[i];
+                if(ball.x > w.x && ball.x < w.x + w.w && ball.y - ball.r < w.y + w.h && ball.y + ball.r > w.y) {
+                    walls.splice(i, 1);
+                    ball.speedY *= -1;
+                    score += 10;
+                    document.getElementById("score").innerText = "Puan: " + score;
+                    if(walls.length === 0) initWalls(); // Duvarlar bitince yenisini diz
+                    break;
+                }
+            }
+
+            if(ball.y >= canvas.height - ball.r) { score=0; document.getElementById("score").innerText = "Puan: 0"; ball.x = canvas.width/2; ball.y = 300; initWalls(); }
+            
+            if(ball.y + ball.r >= player.y && ball.y - ball.r <= player.y + player.h && ball.x >= player.x && ball.x <= player.x + player.w && ball.speedY > 0) {
+                ball.speedY *= -1;
+            }
+        }
+
+        function loop() {
+            ctx.clearRect(0,0, canvas.width, canvas.height);
+            ctx.fillStyle = "lime"; ctx.fillRect(player.x, player.y, player.w, player.h);
+            ctx.fillStyle = "red"; ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2); ctx.fill();
+            walls.forEach(w => { ctx.fillStyle = w.color; ctx.fillRect(w.x, w.y, w.w, w.h); });
+            update(); requestAnimationFrame(loop);
+        }
+        loop();
+    </script>
 </body>
 </html>
