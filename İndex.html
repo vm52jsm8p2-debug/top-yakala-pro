@@ -1,36 +1,51 @@
 <!DOCTYPE html>
 <html>
-<body style="margin:0; background:#333; display:flex; justify-content:center; align-items:center; height:100vh;">
-    <div id="puzzle" style="display:grid; grid-template-columns:repeat(3, 100px); gap:2px;"></div>
-    <script>
-        let tiles = [0, 1, 2, 3, 4, 5, 6, 7, 8];
-        // Resim linki hatasını çözmek için örnek bir internet görseli kullandım
-        const imgUrl = "https://picsum.photos/300"; 
+<body style="background:#222; display:flex; justify-content:center; align-items:center; height:100vh; margin:0; color:white; font-family:sans-serif;">
 
-        function render() {
-            const board = document.getElementById("puzzle");
-            board.innerHTML = "";
-            tiles.forEach((t, i) => {
-                let div = document.createElement("div");
-                div.style.width = "100px"; div.style.height = "100px";
-                div.style.border = "1px solid #555";
-                if (t === 8) { div.style.background = "#333"; }
-                else {
-                    div.style.backgroundImage = `url('${imgUrl}')`;
-                    div.style.backgroundSize = "300px 300px";
-                    div.style.backgroundPosition = `${-(t%3)*100}px ${-Math.floor(t/3)*100}px`;
-                }
-                div.onclick = () => {
-                    let empty = tiles.indexOf(8);
-                    if ([i-1, i+1, i-3, i+3].includes(empty)) {
-                        [tiles[i], tiles[empty]] = [tiles[empty], tiles[i]];
-                        render();
-                    }
-                };
-                board.appendChild(div);
-            });
+<div id="board" style="display:grid; grid-template-columns:repeat(3, 80px); gap:5px;"></div>
+
+<script>
+    let tiles = [1, 2, 3, 4, 5, 6, 7, 8, 0]; // 0 boş olan yer
+
+    function render() {
+        const board = document.getElementById("board");
+        board.innerHTML = "";
+        tiles.forEach((t, i) => {
+            let div = document.createElement("div");
+            div.style.width = "80px";
+            div.style.height = "80px";
+            div.style.background = t === 0 ? "#222" : "#4A90E2";
+            div.style.display = "flex";
+            div.style.justifyContent = "center";
+            div.style.alignItems = "center";
+            div.style.fontSize = "24px";
+            div.style.cursor = "pointer";
+            div.style.borderRadius = "5px";
+            div.innerText = t === 0 ? "" : t;
+            div.onclick = () => move(i);
+            board.appendChild(div);
+        });
+    }
+
+    function move(i) {
+        let empty = tiles.indexOf(0);
+        let validMoves = [i-1, i+1, i-3, i+3];
+        if (validMoves.includes(empty)) {
+            if (i%3 === 0 && empty === i-1) return;
+            if (i%3 === 2 && empty === i+1) return;
+            [tiles[i], tiles[empty]] = [tiles[empty], tiles[i]];
+            render();
         }
-        render();
-    </script>
+    }
+
+    // Başlangıçta karıştır
+    for(let i=0; i<100; i++) {
+        let empty = tiles.indexOf(0);
+        let moves = [empty-1, empty+1, empty-3, empty+3].filter(m => m >= 0 && m < 9);
+        let next = moves[Math.floor(Math.random()*moves.length)];
+        [tiles[empty], tiles[next]] = [tiles[next], tiles[empty]];
+    }
+    render();
+</script>
 </body>
 </html>
