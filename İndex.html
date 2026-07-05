@@ -1,51 +1,21 @@
-<!DOCTYPE html>
-<html>
-<body style="background:#222; display:flex; justify-content:center; align-items:center; height:100vh; margin:0; color:white; font-family:sans-serif;">
+using UnityEngine;
 
-<div id="board" style="display:grid; grid-template-columns:repeat(3, 80px); gap:5px;"></div>
+public class BallController : MonoBehaviour
+{
+    public float speed = 8f;
+    private Rigidbody rb;
 
-<script>
-    let tiles = [1, 2, 3, 4, 5, 6, 7, 8, 0]; // 0 boş olan yer
-
-    function render() {
-        const board = document.getElementById("board");
-        board.innerHTML = "";
-        tiles.forEach((t, i) => {
-            let div = document.createElement("div");
-            div.style.width = "80px";
-            div.style.height = "80px";
-            div.style.background = t === 0 ? "#222" : "#4A90E2";
-            div.style.display = "flex";
-            div.style.justifyContent = "center";
-            div.style.alignItems = "center";
-            div.style.fontSize = "24px";
-            div.style.cursor = "pointer";
-            div.style.borderRadius = "5px";
-            div.innerText = t === 0 ? "" : t;
-            div.onclick = () => move(i);
-            board.appendChild(div);
-        });
+    void Start()
+    {
+        rb = GetComponent<Rigidbody>();
     }
 
-    function move(i) {
-        let empty = tiles.indexOf(0);
-        let validMoves = [i-1, i+1, i-3, i+3];
-        if (validMoves.includes(empty)) {
-            if (i%3 === 0 && empty === i-1) return;
-            if (i%3 === 2 && empty === i+1) return;
-            [tiles[i], tiles[empty]] = [tiles[empty], tiles[i]];
-            render();
-        }
-    }
+    void FixedUpdate()
+    {
+        float x = Input.GetAxis("Horizontal");
+        float z = Input.GetAxis("Vertical");
 
-    // Başlangıçta karıştır
-    for(let i=0; i<100; i++) {
-        let empty = tiles.indexOf(0);
-        let moves = [empty-1, empty+1, empty-3, empty+3].filter(m => m >= 0 && m < 9);
-        let next = moves[Math.floor(Math.random()*moves.length)];
-        [tiles[empty], tiles[next]] = [tiles[next], tiles[empty]];
+        Vector3 movement = new Vector3(x, 0, z);
+        rb.AddForce(movement * speed);
     }
-    render();
-</script>
-</body>
-</html>
+}
