@@ -13,14 +13,13 @@
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
 
-    // Ekranı tam kapla
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
     let x = canvas.width / 2;
     let y = canvas.height / 2;
-    let dx = 12;
-    let dy = 12;
+    let dx = 8; // Başlangıç hızı
+    let dy = 8;
     let ballRadius = 15;
 
     function draw() {
@@ -32,8 +31,15 @@
         ctx.fill();
         ctx.closePath();
 
-        if (x + dx > canvas.width - ballRadius || x + dx < ballRadius) dx = -dx;
-        if (y + dy > canvas.height - ballRadius || y + dy < ballRadius) dy = -dy;
+        // Duvara çarpma kontrolü ve %10 hız artışı
+        if (x + dx > canvas.width - ballRadius || x + dx < ballRadius) {
+            dx = -dx * 1.1; // Hızı %10 artır
+            dy = dy * 1.1;
+        }
+        if (y + dy > canvas.height - ballRadius || y + dy < ballRadius) {
+            dy = -dy * 1.1; // Hızı %10 artır
+            dx = dx * 1.1;
+        }
 
         x += dx;
         y += dy;
