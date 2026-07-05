@@ -15,15 +15,14 @@ canvas { display:block; }
 <script>
 const c = document.getElementById("c");
 const x = c.getContext("2d");
-c.width = window.innerWidth;
-c.height = window.innerHeight;
+c.width = window.innerWidth; c.height = window.innerHeight;
 
 let p = {x:c.width/2-50, y:c.height-150, w:100, h:20};
 let b = {x:c.width/2, y:c.height-170, dx:5, dy:-5, r:15, active:false};
-let w = [];
+let w = [], gameOver = false;
 
 function init() {
-    w = [];
+    w = []; gameOver = false;
     for(let i=0; i<5; i++) {
         for(let j=0; j<3; j++) {
             w.push({x:20+i*(c.width/5-10), y:50+j*40, w:c.width/5-20, h:20});
@@ -38,29 +37,40 @@ document.getElementById("l").addEventListener("touchend",()=>l=false);
 document.getElementById("r").addEventListener("touchstart",()=>r=true);
 document.getElementById("r").addEventListener("touchend",()=>r=false);
 
-window.addEventListener("touchstart",()=>{if(!b.active) b.active=true;});
+window.addEventListener("touchstart",()=>{
+    if(gameOver) init();
+    else if(!b.active) b.active=true;
+});
 
 function loop() {
-    if(l && p.x>0) p.x-=10;
-    if(r && p.x<c.width-p.w) p.x+=10;
-    
-    if(b.active) {
-        b.x+=b.dx; b.y+=b.dy;
-        if(b.x<0 || b.x>c.width) b.dx*=-1;
-        if(b.y<0) b.dy*=-1;
-        if(b.y>p.y && b.x>p.x && b.x<p.x+p.w) b.dy*=-1;
-        w.forEach((v,i)=>{
-            if(b.x>v.x && b.x<v.x+v.w && b.y>v.y && b.y<v.y+v.h) { w.splice(i,1); b.dy*=-1; }
-        });
-        if(b.y>c.height) { b.active=false; init(); }
-    } else {
-        b.x=p.x+p.w/2; b.y=p.y-b.r;
+    if(!gameOver) {
+        if(l && p.x>0) p.x-=10;
+        if(r && p.x<c.width-p.w) p.x+=10;
+        
+        if(b.active) {
+            b.x+=b.dx; b.y+=b.dy;
+            if(b.x<b.r || b.x>c.width-b.r) b.dx*=-1;
+            if(b.y<b.r) b.dy*=-1;
+            if(b.y>p.y && b.x>p.x && b.x<p.x+p.w) b.dy=-Math.abs(b.dy);
+            w.forEach((v,i)=>{
+                if(b.x>v.x && b.x<v.x+v.w && b.y>v.y && b.y<v.y+v.h) { w.splice(i,1); b.dy*=-1; }
+            });
+            if(b.y>c.height) gameOver = true;
+        } else {
+            b.x=p.x+p.w/2; b.y=p.y-b.r;
+        }
     }
     
     x.clearRect(0,0,c.width,c.height);
     x.fillStyle="white"; x.fillRect(p.x,p.y,p.w,p.h);
     x.fillStyle="red"; x.beginPath(); x.arc(b.x,b.y,b.r,0,7); x.fill();
     x.fillStyle="cyan"; w.forEach(v=>x.fillRect(v.x,v.y,v.w,v.h));
+    
+    if(gameOver) {
+        x.fillStyle="blue"; x.fillRect(c.width/2-100, c.height/2-40, 200, 80);
+        x.fillStyle="white"; x.font="30px Arial"; x.textAlign="center";
+        x.fillText("TRY AGAIN", c.width/2, c.height/2+10);
+    }
     requestAnimationFrame(loop);
 }
 loop();
