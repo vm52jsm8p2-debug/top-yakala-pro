@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Süper Emir - Çift Joystick Sabit</title>
+    <title>Süper Emir - Çift Joystick Final</title>
     <style>
         * {
             box-sizing: border-box;
@@ -127,7 +127,7 @@
 
                 if (moveJoy.active && touch.identifier === moveJoy.touchId) {
                     let dx = touchX - moveJoy.startX;
-                    let dy = touchY - moveJoy.timezoneOffset || touchY - moveJoy.startY;
+                    let dy = touchY - moveJoy.startY;
                     let dist = Math.hypot(dx, dy);
 
                     if (dist > moveJoy.maxRadius) {
