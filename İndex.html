@@ -12,37 +12,46 @@
 <script>
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
-
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
     let x = canvas.width / 2;
     let y = canvas.height / 2;
-    let dx = 4;
-    let dy = 4;
+    let dx = 2, dy = 2;
     let ballRadius = 15;
-    let gameSpeed = 1; // Oyunun genel hız çarpanı
+    let gameSpeed = 1;
+
+    // Engel bloğu
+    let block = { x: 300, y: 200, w: 100, h: 100 };
 
     function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
+        // Bloğu çiz
+        ctx.fillStyle = "white";
+        ctx.fillRect(block.x, block.y, block.w, block.h);
+
+        // Topu çiz
         ctx.beginPath();
         ctx.arc(x, y, ballRadius, 0, Math.PI * 2);
         ctx.fillStyle = "#FF0000";
         ctx.fill();
         ctx.closePath();
 
-        // Çarpışma kontrolü ve oyun genel hızını 2 katına çıkarma
+        // Duvar çarpışma kontrolü
         if (x + (dx * gameSpeed) > canvas.width - ballRadius || x + (dx * gameSpeed) < ballRadius) {
-            dx = -dx;
-            gameSpeed *= 2; // Çarptığında oyun hızını 2 katına çıkar
+            dx = -dx; gameSpeed *= 10;
         }
         if (y + (dy * gameSpeed) > canvas.height - ballRadius || y + (dy * gameSpeed) < ballRadius) {
-            dy = -dy;
-            gameSpeed *= 2; // Çarptığında oyun hızını 2 katına çıkar
+            dy = -dy; gameSpeed *= 10;
         }
 
-        // Hareketi oyun hızına göre uygula
+        // Blok çarpışma kontrolü
+        if (x > block.x && x < block.x + block.w && y > block.y && y < block.y + block.h) {
+            dx = -dx; dy = -dy;
+            gameSpeed *= 10;
+        }
+
         x += dx * gameSpeed;
         y += dy * gameSpeed;
         
