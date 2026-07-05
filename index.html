@@ -8,37 +8,34 @@
     c.width = window.innerWidth;
     c.height = window.innerHeight;
 
-    let p = {x:100, y:300, a:0}, a = {x:150, y:350}, en = [{x:500, y:300, l:Date.now()}];
+    // Oyuncu, Arkadaş ve Düşmanlar
+    let p = {x:200, y:300, hp:100}, a = {x:250, y:350, hp:100}, en = [{x:500, y:300, hp:100, l:Date.now()}];
     let bullets = [];
 
-    // Hareket ve Ateş (Tüm ekran)
+    // Dokunmatik Kontrol
     c.ontouchmove = (e) => {
         let t = e.touches[0];
         if(t.clientX < window.innerWidth/2) {
-            p.x += (t.clientX - (p.x+10))/10; p.y += (t.clientY - (p.y+10))/10;
+            p.x += (t.clientX - (p.x+15))/10; p.y += (t.clientY - (p.y+15))/10;
         } else {
-            p.a = Math.atan2(t.clientY - p.y, t.clientX - p.x);
-            if(Date.now() % 100 < 20) bullets.push({x:p.x, y:p.y, vx:Math.cos(p.a)*10, vy:Math.sin(p.a)*10, color:'yellow'});
+            let angle = Math.atan2(t.clientY - p.y, t.clientX - p.x);
+            if(Date.now() % 150 < 30) bullets.push({x:p.x, y:p.y, vx:Math.cos(angle)*12, vy:Math.sin(angle)*12, color:'yellow', dmg:100});
         }
     };
 
     function loop() {
-        ctx.fillStyle = "rgba(34, 34, 34, 0.3)";
+        ctx.fillStyle = "rgba(40, 40, 40, 0.4)";
         ctx.fillRect(0,0,c.width,c.height);
 
-        // Oyuncu ve Arkadaş
-        ctx.fillStyle="blue"; ctx.fillRect(p.x, p.y, 30, 30);
-        ctx.fillStyle="green"; ctx.fillRect(a.x, a.y, 30, 30);
+        // Çizimler
+        ctx.fillStyle="blue"; ctx.fillRect(p.x, p.y, 40, 40);
+        ctx.fillStyle="lime"; ctx.fillRect(a.x, a.y, 40, 40);
         
-        // Arkadaş Yapay Zekası
-        a.x += (p.x - a.x)/100; a.y += (p.y - a.y)/100;
-        if(Date.now() % 500 < 50) bullets.push({x:a.x, y:a.y, vx:5, vy:0, color:'lime'});
-
-        // Düşman
-        en.forEach(e => {
-            ctx.fillStyle="red"; ctx.fillRect(e.x, e.y, 30, 30);
-            if(Date.now() - e.l > 1500) {
-                bullets.push({x:e.x, y:e.y, vx:-5, vy:0, color:'white'});
+        // Düşman Yapay Zekası ve Ateşi
+        en.forEach((e, i) => {
+            ctx.fillStyle="red"; ctx.fillRect(e.x, e.y, 40, 40);
+            if(Date.now() - e.l > 2000) {
+                bullets.push({x:e.x, y:e.y, vx:(p.x-e.x)/50, vy:(p.y-e.y)/50, color:'white', dmg:1});
                 e.l = Date.now();
             }
         });
