@@ -24,6 +24,7 @@ let w = [], particles = [], lvl = 1;
 
 function initWalls() {
     w = []; particles = [];
+    b.active = false;
     let rows = 3, cols = 5, gap = 15;
     let cellW = (c.width - 40) / cols;
     let cellH = 30;
@@ -33,15 +34,12 @@ function initWalls() {
         }
     }
     document.getElementById("ui").innerText = "Seviye: " + lvl;
-    // Topu raket üzerine yerleştir ve pasif yap
-    b.active = false;
 }
 
 initWalls();
 
 let l=false, r=false;
 
-// Ekranın herhangi bir yerine dokunulduğunda topu fırlat
 window.addEventListener("touchstart", (e) => {
     if(!b.active) {
         let speed = 5 + (lvl - 1) * 0.8;
@@ -76,7 +74,7 @@ function update(){
             }
         });
         
-        if(w.length === 0) { lvl++; if(lvl>20) { alert("Tebrikler!"); lvl=1; } initWalls(); }
+        if(w.length === 0) { lvl++; if(lvl>20) lvl=1; initWalls(); }
         if(b.y > c.height) { lvl=1; initWalls(); }
     }
 
