@@ -42,18 +42,16 @@
 
     <div id="ui">Skor: <span id="scoreVal">0</span> | Can: <span id="healthVal">100</span></div>
     <canvas id="gameCanvas" width="600" height="600"></canvas>
-    <p style="margin: 5px 0 0 0;">Sol taraf: <b>Yürüme</b> | Sağ taraf: <b>Ateş Etme Yönü</b></p>
+    <p style="margin: 5px 0 0 0;">Sol taraf: <b>Yürüme</b> | Sağ taraf: <b>Ateş Yönü</b></p>
 
     <script>
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
 
-        // Oyun Durumu
         let score = 0;
         let health = 100;
         let gameOver = false;
 
-        // Oyuncu Özellikleri
         let player = {
             x: 300,
             y: 300,
@@ -63,7 +61,6 @@
             angle: 0
         };
 
-        // Sol Joystick (Hareket)
         let moveJoy = {
             startX: 0, startY: 0,
             currentX: 0, currentY: 0,
@@ -71,7 +68,6 @@
             maxRadius: 50
         };
 
-        // Sağ Joystick (Ateş Etme)
         let shootJoy = {
             startX: 0, startY: 0,
             currentX: 0, currentY: 0,
@@ -87,9 +83,8 @@
         let bullets = [];
         let enemies = [];
         let lastShotTime = 0;
-        const shotCooldown = 250; // Mermiler arası bekleme süresi (milisaniye)
+        const shotCooldown = 250; 
 
-        // Dokunmatik Başlangıcı
         canvas.addEventListener("touchstart", (e) => {
             if (gameOver) return;
             e.preventDefault();
@@ -100,7 +95,6 @@
                 let touchX = touch.clientX - rect.left;
                 let touchY = touch.clientY - rect.top;
 
-                // EKRANIN SOL YARISI -> Hareket Joystick'i
                 if (touchX < canvas.width / 2 && !moveJoy.active) {
                     moveJoy.active = true;
                     moveJoy.startX = touchX;
@@ -109,7 +103,6 @@
                     moveJoy.currentY = touchY;
                     moveJoy.touchId = touch.identifier;
                 }
-                // EKRANIN SAĞ YARISI -> Ateş Etme Joystick'i
                 else if (touchX >= canvas.width / 2 && !shootJoy.active) {
                     shootJoy.active = true;
                     shootJoy.startX = touchX;
@@ -121,7 +114,6 @@
             }
         }, { passive: false });
 
-        // Dokunmatik Hareketi
         canvas.addEventListener("touchmove", (e) => {
             e.preventDefault();
             const rect = canvas.getBoundingClientRect();
@@ -131,7 +123,6 @@
                 let touchX = touch.clientX - rect.left;
                 let touchY = touch.clientY - rect.top;
 
-                // Sol Joystick Güncelleme
                 if (moveJoy.active && touch.identifier === moveJoy.touchId) {
                     let dx = touchX - moveJoy.startX;
                     let dy = touchY - moveJoy.startY;
@@ -149,7 +140,6 @@
                     moveY = (moveJoy.currentY - moveJoy.startY) / moveJoy.maxRadius;
                 }
 
-                // Sağ Joystick Güncelleme
                 if (shootJoy.active && touch.identifier === shootJoy.touchId) {
                     let dx = touchX - shootJoy.startX;
                     let dy = touchY - shootJoy.startY;
@@ -165,18 +155,14 @@
                     }
                     shootX = (shootJoy.currentX - shootJoy.startX) / shootJoy.maxRadius;
                     shootY = (shootJoy.currentY - shootJoy.startY) / shootJoy.maxRadius;
-                    
-                    // Oyuncunun yüzünü ateş ettiği yöne çevir
                     player.angle = Math.atan2(shootY, shootX);
                 }
             }
         }, { passive: false });
 
-        // Dokunmatik Bitişi
         canvas.addEventListener("touchend", (e) => {
             for (let i = 0; i < e.changedTouches.length; i++) {
                 let touch = e.changedTouches[i];
-                
                 if (moveJoy.active && touch.identifier === moveJoy.touchId) {
                     moveJoy.active = false;
                     moveJoy.touchId = null;
@@ -190,7 +176,6 @@
             }
         });
 
-        // Ateş Etme Fonksiyonu
         function shoot(angle) {
             bullets.push({
                 x: player.x,
@@ -202,10 +187,8 @@
             });
         }
 
-        // Düşman Doğma Sistemi
         function spawnEnemy() {
             if (gameOver) return;
-            
             let x, y;
             if (Math.random() < 0.5) {
                 x = Math.random() < 0.5 ? -20 : canvas.width + 20;
@@ -214,18 +197,15 @@
                 x = Math.random() * canvas.width;
                 y = Math.random() < 0.5 ? -20 : canvas.height + 20;
             }
-
             enemies.push({
                 x: x, y: y, radius: 15,
                 speed: 1.2 + Math.random() * 1.2,
                 color: '#e74c3c'
             });
-
             setTimeout(spawnEnemy, Math.max(600, 2000 - score * 40));
         }
         spawnEnemy();
 
-        // Ana Oyun Döngüsü
         function gameLoop() {
             if (gameOver) {
                 ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
@@ -238,6 +218,119 @@
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // 1. Oyuncu Hareketi
             if (moveJoy.active) {
-                player.x += moveX *
+                player.x += moveX * player.speed;
+                player.y += moveY * player.speed;
+                if (!shootJoy.active) {
+                    player.angle = Math.atan2(moveY, moveX);
+                }
+                if (player.x < player.radius) player.x = player.radius;
+                if (player.y < player.radius) player.y = player.radius;
+                if (player.x > canvas.width - player.radius) player.x = canvas.width - player.radius;
+                if (player.y > canvas.height - player.radius) player.y = canvas.height - player.radius;
+            }
+
+            if (shootJoy.active) {
+                let currentTime = Date.now();
+                if (Math.hypot(shootX, shootY) > 0.3 && currentTime - lastShotTime > shotCooldown) {
+                    shoot(player.angle);
+                    lastShotTime = currentTime;
+                }
+            }
+
+            ctx.beginPath();
+            ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+            ctx.fillStyle = player.color;
+            ctx.fill();
+            ctx.closePath();
+
+            ctx.beginPath();
+            ctx.moveTo(player.x, player.y);
+            ctx.lineTo(player.x + Math.cos(player.angle) * 30, player.y + Math.sin(player.angle) * 30);
+            ctx.strokeStyle = "#fff";
+            ctx.lineWidth = 5;
+            ctx.stroke();
+            ctx.closePath();
+
+            if (moveJoy.active) {
+                ctx.beginPath();
+                ctx.arc(moveJoy.startX, moveJoy.startY, moveJoy.maxRadius, 0, Math.PI * 2);
+                ctx.fillStyle = "rgba(255, 255, 255, 0.15)";
+                ctx.fill();
+                ctx.closePath();
+                ctx.beginPath();
+                ctx.arc(moveJoy.currentX, moveJoy.currentY, 20, 0, Math.PI * 2);
+                ctx.fillStyle = "rgba(52, 152, 219, 0.6)";
+                ctx.fill();
+                ctx.closePath();
+            }
+
+            if (shootJoy.active) {
+                ctx.beginPath();
+                ctx.arc(shootJoy.startX, shootJoy.startY, shootJoy.maxRadius, 0, Math.PI * 2);
+                ctx.fillStyle = "rgba(255, 255, 255, 0.15)";
+                ctx.fill();
+                ctx.closePath();
+                ctx.beginPath();
+                ctx.arc(shootJoy.currentX, shootJoy.currentY, 20, 0, Math.PI * 2);
+                ctx.fillStyle = "rgba(231, 76, 60, 0.6)";
+                ctx.fill();
+                ctx.closePath();
+            }
+
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                let b = bullets[i];
+                b.x += b.vx;
+                b.y += b.vy;
+                if (b.x < 0 || b.x > canvas.width || b.y < 0 || b.y > canvas.height) {
+                    bullets.splice(i, 1);
+                    continue;
+                }
+                ctx.beginPath();
+                ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+                ctx.fillStyle = b.color;
+                ctx.fill();
+                ctx.closePath();
+            }
+
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                let e = enemies[i];
+                let edx = player.x - e.x;
+                let edy = player.y - e.y;
+                let eAngle = Math.atan2(edy, edx);
+                e.x += Math.cos(eAngle) * e.speed;
+                e.y += Math.sin(eAngle) * e.speed;
+
+                ctx.beginPath();
+                ctx.arc(e.x, e.y, e.radius, 0, Math.PI * 2);
+                ctx.fillStyle = e.color;
+                ctx.fill();
+                ctx.closePath();
+
+                let distToPlayer = Math.hypot(player.x - e.x, player.y - e.y);
+                if (distToPlayer < player.radius + e.radius) {
+                    enemies.splice(i, 1);
+                    health -= 10;
+                    document.getElementById("healthVal").innerText = health;
+                    if (health <= 0) gameOver = true;
+                    continue;
+                }
+
+                for (let j = bullets.length - 1; j >= 0; j--) {
+                    let b = bullets[j];
+                    let distToBullet = Math.hypot(b.x - e.x, b.y - e.y);
+                    if (distToBullet < b.radius + e.radius) {
+                        enemies.splice(i, 1);
+                        bullets.splice(j, 1);
+                        score += 10;
+                        document.getElementById("scoreVal").innerText = score;
+                        break;
+                    }
+                }
+            }
+            requestAnimationFrame(gameLoop);
+        }
+        gameLoop();
+    </script>
+</body>
+</html>
