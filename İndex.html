@@ -18,9 +18,10 @@
 
     let x = canvas.width / 2;
     let y = canvas.height / 2;
-    let dx = 8; // Başlangıç hızı
-    let dy = 8;
+    let dx = 4;
+    let dy = 4;
     let ballRadius = 15;
+    let gameSpeed = 1; // Oyunun genel hız çarpanı
 
     function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -31,18 +32,20 @@
         ctx.fill();
         ctx.closePath();
 
-        // Duvara çarpma kontrolü ve %10 hız artışı
-        if (x + dx > canvas.width - ballRadius || x + dx < ballRadius) {
-            dx = -dx * 1.1; // Hızı %10 artır
-            dy = dy * 1.1;
+        // Çarpışma kontrolü ve oyun genel hızını 2 katına çıkarma
+        if (x + (dx * gameSpeed) > canvas.width - ballRadius || x + (dx * gameSpeed) < ballRadius) {
+            dx = -dx;
+            gameSpeed *= 2; // Çarptığında oyun hızını 2 katına çıkar
         }
-        if (y + dy > canvas.height - ballRadius || y + dy < ballRadius) {
-            dy = -dy * 1.1; // Hızı %10 artır
-            dx = dx * 1.1;
+        if (y + (dy * gameSpeed) > canvas.height - ballRadius || y + (dy * gameSpeed) < ballRadius) {
+            dy = -dy;
+            gameSpeed *= 2; // Çarptığında oyun hızını 2 katına çıkar
         }
 
-        x += dx;
-        y += dy;
+        // Hareketi oyun hızına göre uygula
+        x += dx * gameSpeed;
+        y += dy * gameSpeed;
+        
         requestAnimationFrame(draw);
     }
     draw();
