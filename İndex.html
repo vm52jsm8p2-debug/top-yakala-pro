@@ -1,62 +1,36 @@
 <!DOCTYPE html>
 <html>
-<head>
-    <style>
-        body { background: #333; display: flex; flex-direction: column; align-items: center; color: white; font-family: sans-serif; }
-        #puzzle { display: grid; grid-template-columns: repeat(3, 150px); gap: 2px; margin-top: 20px; }
-        .tile { width: 150px; height: 150px; cursor: pointer; border: 1px solid #555; }
-    </style>
-</head>
-<body>
-    <h2>Puzzle Oyunu</h2>
-    <p>Resmi seç ve parçaları kaydırarak tamamla!</p>
-    <select id="resimSec" onchange="resimDegistir()">
-        <option value="image.png">1. Fotoğraf</option>
-        <option value="image_2.png">2. Fotoğraf</option>
-    </select>
-    <div id="puzzle"></div>
-
+<body style="margin:0; background:#333; display:flex; justify-content:center; align-items:center; height:100vh;">
+    <div id="puzzle" style="display:grid; grid-template-columns:repeat(3, 100px); gap:2px;"></div>
     <script>
         let tiles = [0, 1, 2, 3, 4, 5, 6, 7, 8];
-        let seciliResim = "image.png";
-
-        function resimDegistir() {
-            seciliResim = document.getElementById("resimSec").value;
-            karistir();
-        }
+        // Resim linki hatasını çözmek için örnek bir internet görseli kullandım
+        const imgUrl = "https://picsum.photos/300"; 
 
         function render() {
             const board = document.getElementById("puzzle");
             board.innerHTML = "";
             tiles.forEach((t, i) => {
                 let div = document.createElement("div");
-                div.className = "tile";
-                if (t === 8) { div.style.background = "#333"; } // Boş parça
+                div.style.width = "100px"; div.style.height = "100px";
+                div.style.border = "1px solid #555";
+                if (t === 8) { div.style.background = "#333"; }
                 else {
-                    div.style.backgroundImage = `url('${seciliResim}')`;
-                    div.style.backgroundSize = "450px 450px";
-                    div.style.backgroundPosition = `${-(t%3)*150}px ${-Math.floor(t/3)*150}px`;
+                    div.style.backgroundImage = `url('${imgUrl}')`;
+                    div.style.backgroundSize = "300px 300px";
+                    div.style.backgroundPosition = `${-(t%3)*100}px ${-Math.floor(t/3)*100}px`;
                 }
-                div.onclick = () => moveTile(i);
+                div.onclick = () => {
+                    let empty = tiles.indexOf(8);
+                    if ([i-1, i+1, i-3, i+3].includes(empty)) {
+                        [tiles[i], tiles[empty]] = [tiles[empty], tiles[i]];
+                        render();
+                    }
+                };
                 board.appendChild(div);
             });
         }
-
-        function moveTile(i) {
-            let empty = tiles.indexOf(8);
-            let neighbors = [i-1, i+1, i-3, i+3];
-            if (neighbors.includes(empty) && !(i%3==0 && empty==i-1) && !(i%3==2 && empty==i+1)) {
-                [tiles[i], tiles[empty]] = [tiles[empty], tiles[i]];
-                render();
-            }
-        }
-
-        function karistir() {
-            for(let i=0; i<100; i++) moveTile(Math.floor(Math.random()*9));
-            render();
-        }
-
-        karistir();
+        render();
     </script>
 </body>
 </html>
