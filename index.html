@@ -6,20 +6,18 @@
 <style>
     body { margin:0; background:#000; overflow:hidden; touch-action:none; }
     canvas { display:block; }
-    .control { 
-        position:absolute; bottom:0; width:50%; height:200px; 
-        user-select: none; -webkit-user-select: none; touch-action: none;
-    }
+    .btn { position:absolute; bottom:0; width:50%; height:200px; touch-action:none; }
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
-<div id="l" class="control" style="left:0"></div>
-<div id="r" class="control" style="right:0"></div>
+<div id="l" class="btn" style="left:0"></div>
+<div id="r" class="btn" style="right:0"></div>
 <script>
 const c = document.getElementById("c");
 const x = c.getContext("2d");
-c.width = window.innerWidth; c.height = window.innerHeight;
+c.width = window.innerWidth;
+c.height = window.innerHeight;
 
 let p = {x:c.width/2-50, y:c.height-150, w:100, h:20};
 let b = {x:c.width/2, y:c.height-170, dx:5, dy:-5, r:15, active:false};
@@ -50,17 +48,17 @@ document.getElementById("r").addEventListener("touchend",(e)=>{e.preventDefault(
 
 window.addEventListener("touchstart",(e)=>{
     let rect = c.getBoundingClientRect();
-    let touchY = e.touches[0].clientY;
-    let touchX = e.touches[0].clientX;
+    let touch = e.touches[0];
+    let tx = touch.clientX - rect.left;
+    let ty = touch.clientY - rect.top;
     
-    // DEVAM butonuna basıldı mı? (Ekranın ortasındaki kutu)
-    if(levelUp && touchY > c.height/2+20 && touchY < c.height/2+100 && touchX > c.width/2-100 && touchX < c.width/2+100) {
-        level++;
-        init();
+    if(levelUp && ty > c.height/2+20 && ty < c.height/2+80 && tx > c.width/2-100 && tx < c.width/2+100) {
+        level++; init();
+    } else if(gameOver && ty > c.height/2-40 && ty < c.height/2+40 && tx > c.width/2-100 && tx < c.width/2+100) {
+        level = 1; init();
+    } else if(!b.active && !gameOver && !levelUp) {
+        b.active = true;
     }
-    // TRY AGAIN butonuna basıldı mı?
-    else if(gameOver) { level=1; init(); }
-    else if(!b.active) { b.active=true; }
 });
 
 function loop() {
@@ -89,8 +87,7 @@ function loop() {
     x.fillStyle="red"; x.beginPath(); x.arc(b.x,b.y,b.r,0,Math.PI*2); x.fill();
     x.fillStyle="cyan"; w.forEach(v=>x.fillRect(v.x,v.y,v.w,v.h));
     
-    // Mesajlar
-    x.fillStyle="white"; x.font="20px Arial"; x.fillText("Level: "+level, 10, 30);
+    x.fillStyle="white"; x.font="20px Arial"; x.textAlign="center"; x.fillText("Level: "+level, 50, 30);
     
     if(gameOver) {
         x.fillStyle="blue"; x.fillRect(c.width/2-100, c.height/2-40, 200, 80);
