@@ -1,51 +1,36 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <style>
-    body { margin:0; background:#000; overflow:hidden; touch-action:none; }
-    canvas { display:block; }
+  .yonlendirme-kutusu {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    font-family: sans-serif;
+    padding: 20px;
+    background-color: #f4f4f4;
+    border-radius: 10px;
+  }
+
+  .buyuk-yazi {
+    font-size: 48px; /* Yazı boyutu */
+    font-weight: bold;
+    color: #333;
+  }
+
+  .ok-isareti {
+    font-size: 60px; /* Okun boyutu */
+    color: #ff4500;  /* Okun rengi */
+    font-weight: bold;
+  }
 </style>
 </head>
 <body>
-<canvas id="c"></canvas>
-<script>
-    var c = document.getElementById("c");
-    var x = c.getContext("2d");
-    c.width = window.innerWidth;
-    c.height = window.innerHeight;
 
-    var p = {x: c.width/2 - 60, y: c.height - 100, w: 120, h: 20};
-    var b = {x: c.width/2, y: c.height/2, r: 15, dx: 4, dy: 4};
+<div class="yonlendirme-kutusu">
+  <span class="buyuk-yazi">BURAYA BAKIN</span>
+  <span class="ok-isareti">➔</span>
+</div>
 
-    // Dokunma ile hareket
-    window.addEventListener("touchmove", function(e) {
-        p.x = e.touches[0].clientX - p.w/2;
-    });
-
-    function render() {
-        x.fillStyle = "black";
-        x.fillRect(0, 0, c.width, c.height);
-        
-        // Raket
-        x.fillStyle = "white";
-        x.fillRect(p.x, p.y, p.w, p.h);
-        
-        // Top hareketi
-        b.x += b.dx; b.y += b.dy;
-        if(b.x < 0 || b.x > c.width) b.dx *= -1;
-        if(b.y < 0) b.dy *= -1;
-        if(b.y > p.y && b.x > p.x && b.x < p.x + p.w) b.dy *= -1;
-        
-        // Top
-        x.fillStyle = "yellow";
-        x.beginPath();
-        x.arc(b.x, b.y, b.r, 0, Math.PI*2);
-        x.fill();
-        
-        requestAnimationFrame(render);
-    }
-    render();
-</script>
 </body>
 </html>
