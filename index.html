@@ -22,13 +22,6 @@ let p = {x:c.width/2-50, y:c.height-150, w:100, h:20};
 let b = {x:0, y:0, dx:0, dy:0, r:15, active:false};
 let w = [], particles = [], lvl = 1;
 
-function resetBall() {
-    b.active = false;
-    b.x = p.x + p.w/2;
-    b.y = p.y - b.r;
-    b.dx = 0; b.dy = 0;
-}
-
 function initWalls() {
     w = []; particles = [];
     let rows = 3, cols = 5, gap = 15;
@@ -40,22 +33,24 @@ function initWalls() {
         }
     }
     document.getElementById("ui").innerText = "Seviye: " + lvl;
-    resetBall();
+    // Topu raket üzerine yerleştir ve pasif yap
+    b.active = false;
 }
+
 initWalls();
 
 let l=false, r=false;
-// Dokunmatik kontrol: Hareket ve başlatma
-function startGame() {
+
+// Ekranın herhangi bir yerine dokunulduğunda topu fırlat
+window.addEventListener("touchstart", (e) => {
     if(!b.active) {
         let speed = 5 + (lvl - 1) * 0.8;
         b.dx = (Math.random() > 0.5 ? speed : -speed);
         b.dy = -speed;
         b.active = true;
     }
-}
+});
 
-document.addEventListener("touchstart", startGame);
 document.getElementById("l").addEventListener("touchstart", (e) => { e.preventDefault(); l=true; });
 document.getElementById("l").addEventListener("touchend", () => l=false);
 document.getElementById("r").addEventListener("touchstart", (e) => { e.preventDefault(); r=true; });
