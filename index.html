@@ -24,18 +24,13 @@ let w = [], lvl = 1;
 
 function initWalls() {
     w = [];
-    if (lvl > 20) { alert("Tebrikler! Oyunu bitirdin!"); lvl = 1; }
     let speedBonus = (lvl - 1) * 0.8;
     b.dx = (b.dx > 0 ? 5 + speedBonus : -(5 + speedBonus));
     b.dy = -(5 + speedBonus);
     
-    // Her seviyede rastgele 10 duvar üret
+    // Rastgele 10 duvar
     for(let i=0; i<10; i++) {
-        w.push({
-            x: Math.random() * (c.width - 60), 
-            y: 50 + Math.random() * 150, 
-            w: 50, h: 20
-        });
+        w.push({ x: Math.random()*(c.width-60), y: 50+Math.random()*150, w:50, h:20 });
     }
     document.getElementById("ui").innerText = "Seviye: " + lvl;
 }
@@ -59,8 +54,15 @@ function update(){
         if(b.x>v.x && b.x<v.x+v.w && b.y<v.y+v.h){ w.splice(i,1); b.dy*=-1; }
     });
     
-    if(w.length === 0) { lvl++; initWalls(); b.x=c.width/2; b.y=200; }
-    if(b.y > c.height) { lvl=1; initWalls(); b.x=c.width/2; b.y=200; }
+    if(w.length === 0) { 
+        lvl++; 
+        if (lvl > 20) { alert("Efsanesin! Oyunu bitirdin!"); lvl = 1; }
+        initWalls(); b.x=c.width/2; b.y=200; 
+    }
+    // Top yere değdiğinde:
+    if(b.y > c.height) { 
+        lvl=1; initWalls(); b.x=c.width/2; b.y=200; 
+    }
 
     x.clearRect(0,0,c.width,c.height);
     x.fillStyle="white"; x.fillRect(p.x,p.y,p.w,p.h);
