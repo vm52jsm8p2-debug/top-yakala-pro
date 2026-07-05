@@ -71,11 +71,10 @@ const ctx = canvas.getContext("2d");
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
-// --- MÜZİK AYARLARI ---
-// İnternetten hareketli, retro bir oyun müziği bağladık
-const bgMusic = new Audio("https://actions.google.com/sounds/v1/science_fiction/glitch_in_the_matrix.ogg");
-bgMusic.loop = true; // Müzik bitince otomatik başa saracak
-bgMusic.volume = 0.4; // Ses seviyesi (%40)
+// --- SAFARI UYUMLU MP3 MÜZİK AYARI ---
+const bgMusic = new Audio("https://pub-c5e31b5cdafb419a96a6111d297ca13e.r2.dev/main-theme.mp3");
+bgMusic.loop = true; 
+bgMusic.volume = 0.4; 
 
 let musicStarted = false;
 function startMusic() {
@@ -84,7 +83,7 @@ function startMusic() {
     musicStarted = true;
   }
 }
-// ----------------------
+// -------------------------------------
 
 let score = 0;
 let player = {
@@ -109,7 +108,7 @@ let right = false;
 function hold(btn, dir) {
   btn.addEventListener("touchstart", (e) => {
     e.preventDefault();
-    startMusic(); // Oyuncu butona dokunduğu an müzik başlayacak
+    startMusic(); // Butona basıldığı an MP3 müzik tetiklenecek
     if (dir === "left") left = true;
     if (dir === "right") right = true;
   });
