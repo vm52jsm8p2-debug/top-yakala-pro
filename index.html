@@ -1,43 +1,32 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html>
 <head>
-<meta charset="UTF-8">
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Top Yakala Pro</title>
-
-<!-- 🔥 UYGULAMA HALİNE GETİRME KODLARI -->
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="TopYakalaPro">
-
 <style>
   body {
     margin: 0;
     background: #111;
     overflow: hidden;
-    font-family: Arial;
+    font-family: sans-serif;
     user-select: none;
     -webkit-user-select: none;
     touch-action: none;
   }
-
   canvas {
     display: block;
     background: #222;
   }
-
-  /* 🔥 BÜYÜK SKOR */
   #score {
     position: absolute;
-    top: 40px; /* Uygulama modunda üst barla çakışmasın diye biraz aşağı alındı */
+    top: 40px;
     left: 20px;
-    color: white;
+    color: #fff;
     font-size: 32px;
     font-weight: bold;
     z-index: 10;
   }
-
-  /* 🔥 BUTONLAR */
   .btn {
     position: absolute;
     bottom: 30px;
@@ -50,39 +39,27 @@
     align-items: center;
     justify-content: center;
     z-index: 10;
-    box-shadow: 0 6px #222;
   }
-  
-  .btn:active {
-    transform: translateY(4px);
-    box-shadow: 0 2px #222;
-  }
-
   #left { left: 5%; }
   #right { right: 5%; }
-
-  svg {
-    pointer-events: none;
-  }
+  svg { pointer-events: none; }
 </style>
 </head>
-
 <body>
 
 <div id="score">Puan: 0</div>
 <canvas id="game"></canvas>
 
-<!-- 🔥 GERÇEK OK İKONLARI -->
 <button id="left" class="btn">
-<svg width="35" height="35" viewBox="0 0 24 24" fill="white">
-<path d="M15.5 19l-7-7 7-7v14z"/>
-</svg>
+  <svg width="35" height="35" viewBox="0 0 24 24" fill="white">
+    <path d="M15.5 19l-7-7 7-7v14z"/>
+  </svg>
 </button>
 
 <button id="right" class="btn">
-<svg width="35" height="35" viewBox="0 0 24 24" fill="white">
-<path d="M8.5 5l7 7-7 7V5z"/>
-</svg>
+  <svg width="35" height="35" viewBox="0 0 24 24" fill="white">
+    <path d="M8.5 5l7 7-7 7V5z"/>
+  </svg>
 </button>
 
 <script>
@@ -93,17 +70,14 @@ canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
 let score = 0;
-
-// oyuncu (tam okların üzerinde duruyor)
 let player = {
   x: canvas.width / 2 - 50,
-  y: canvas.height - 130, 
+  y: canvas.height - 130,
   w: 100,
   h: 14,
   speed: 8
 };
 
-// top
 let ball = {
   x: canvas.width / 2,
   y: 120,
@@ -115,25 +89,21 @@ let ball = {
 let left = false;
 let right = false;
 
-// kontrol
 function hold(btn, dir) {
   btn.addEventListener("touchstart", (e) => {
     e.preventDefault();
     if (dir === "left") left = true;
     if (dir === "right") right = true;
   });
-
   btn.addEventListener("touchend", (e) => {
     e.preventDefault();
     if (dir === "left") left = false;
     if (dir === "right") right = false;
   });
-
   btn.addEventListener("mousedown", () => {
     if (dir === "left") left = true;
     if (dir === "right") right = true;
   });
-
   btn.addEventListener("mouseup", () => {
     if (dir === "left") left = false;
     if (dir === "right") right = false;
@@ -143,11 +113,9 @@ function hold(btn, dir) {
 hold(document.getElementById("left"), "left");
 hold(document.getElementById("right"), "right");
 
-// reset
 function resetGame() {
   score = 0;
   document.getElementById("score").innerText = "Puan: " + score;
-
   ball.x = canvas.width / 2;
   ball.y = 120;
   ball.speedX = 5;
@@ -167,11 +135,9 @@ function update() {
   if (ball.x <= ball.r || ball.x >= canvas.width - ball.r) {
     ball.speedX *= -1;
   }
-
   if (ball.y <= ball.r) {
     ball.speedY *= -1;
   }
-
   if (ball.y >= canvas.height - ball.r) {
     resetGame();
   }
@@ -192,12 +158,8 @@ function update() {
 
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  // oyuncu
   ctx.fillStyle = "lime";
   ctx.fillRect(player.x, player.y, player.w, player.h);
-
-  // top
   ctx.beginPath();
   ctx.fillStyle = "red";
   ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
@@ -212,6 +174,5 @@ function loop() {
 
 loop();
 </script>
-
 </body>
 </html>
