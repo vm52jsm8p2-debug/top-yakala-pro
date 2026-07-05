@@ -17,6 +17,8 @@
   canvas {
     display: block;
     background: #222;
+    width: 100vw;
+    height: 100vh;
   }
   #score {
     position: absolute;
@@ -66,32 +68,26 @@
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
+// Ekran boyutlarını doğrudan tarayıcı penceresine eşitleyip sabitliyoruz
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
 let score = 0;
 let player = {
-  x: 0,
-  y: 0,
+  x: canvas.width / 2 - 55,
+  y: canvas.height - 180,
   w: 110,
   h: 16,
   speed: 9
 };
 
 let ball = {
-  x: 0,
-  y: 120,
+  x: canvas.width / 2,
+  y: 150,
   r: 15,
   speedX: 5,
   speedY: 6
 };
-
-function resizeCanvas() {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-  player.y = canvas.height - 160; 
-  if (player.x === 0 || player.x === undefined) {
-    player.x = canvas.width / 2 - player.w / 2;
-    ball.x = canvas.width / 2;
-  }
-}
 
 let left = false;
 let right = false;
@@ -100,4 +96,84 @@ function hold(btn, dir) {
   btn.addEventListener("touchstart", (e) => {
     e.preventDefault();
     if (dir === "left") left = true;
-    if (dir === "right") right = true
+    if (dir === "right") right = true;
+  });
+  btn.addEventListener("touchend", (e) => {
+    e.preventDefault();
+    if (dir === "left") left = false;
+    if (dir === "right") right = false;
+  });
+}
+
+hold(document.getElementById("left"), "left");
+hold(document.getElementById("right"), "right");
+
+function resetGame() {
+  score = 0;
+  document.getElementById("score").innerText = "Puan: " + score;
+  ball.x = canvas.width / 2;
+  ball.y = 150;
+  ball.speedX = 5;
+  ball.speedY = 6;
+}
+
+function update() {
+  if (left) player.x -= player.speed;
+  if (right) player.x += player.speed;
+
+  if (player.x < 0) player.x = 0;
+  if (player.x + player.w > canvas.width) player.x = canvas.width - player.w;
+
+  ball.x += ball.speedX;
+  ball.y += ball.speedY;
+
+  if (ball.x <= ball.r || ball.x >= canvas.width - ball.r) {
+    ball.speedX *= -1;
+  }
+  if (ball.y <= ball.r) {
+    ball.speedY *= -1;
+  }
+  if (ball.y >= canvas.height - ball.r) {
+    resetGame();
+  }
+
+  if (
+    ball.y + ball.r >= player.y &&
+    ball.y - ball.r <= player.y + player.h &&
+    ball.x >= player.x &&
+    ball.x <= player.x + player.w &&
+    ball.speedY > 0
+  ) {
+    score++;
+    document.getElementById("score").innerText = "Puan: " + score;
+    ball.speedY *= -1;
+    ball.speedX *= 1.03;
+    ball.speedY *= 1.03;
+  }
+}
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  
+  // Raket
+  ctx.fillStyle = "lime";
+  ctx.fillRect(player.x, player.y, player.w, player.h);
+  
+  // Top
+  ctx.beginPath();
+  ctx.fillStyle = "red";
+  ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function loop() {
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+// Oyunu doğrudan başlat
+loop();
+</script>
+</body>
+</html>
