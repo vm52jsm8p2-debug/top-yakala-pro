@@ -14,31 +14,19 @@ const c = document.getElementById("c");
 const x = c.getContext("2d");
 c.width = window.innerWidth; c.height = window.innerHeight;
 
-let p = {x:c.width/2-50, y:c.height-120, w:100, h:20};
-let b = {x:c.width/2, y:c.height-140, dx:5, dy:-5, r:10, active:false};
+let p = {x:c.width/2-75, y:c.height-150, w:150, h:25};
+let b = {x:c.width/2, y:c.height-175, dx:6, dy:-6, r:12, active:false};
 let w = [], level = 1, maxLevel = 1, gameOver = false, levelUp = false, showMenu = false;
 
 function init() {
     w = []; gameOver = false; levelUp = false; showMenu = false; b.active = false;
-    p.x = c.width/2-50; b.x = p.x+50; b.y = p.y-15;
+    p.x = c.width/2-75; b.x = p.x+75; b.y = p.y-15;
     
-    // 20 farklı, simetrik olmayan harita
-    let maps = [
-        [10,50, 80,50, 150,50], // Level 1
-        [30,60, 30,100, 100,80, 200,60], // Level 2
-        [50,50, 150,80, 250,50, 300,120, 50,150], // Level 3
-        [20,40, 80,40, 140,40, 20,80, 20,120], // Level 4
-        [200,50, 250,50, 300,50, 200,90, 200,130], // Level 5
-        // ... (Bu mantıkla 20'ye kadar her biri için farklı koordinatlar)
-    ];
-
-    // Seviye 1'den 20'ye kadar rastgele ama her seviyede sabit olan karmaşık dizilimler
-    for(let i=0; i<15; i++) {
-        let offsetX = ((i * 47 + level * 13) % (c.width - 60));
-        let offsetY = 60 + ((i * 31 + level * 7) % 200);
-        // Blok sayısını da level ile değiştirelim
-        if ((i + level) % (3 - Math.floor(level/10)) === 0) {
-            w.push({x: offsetX, y: offsetY, w: 50, h: 20});
+    for(let i=0; i<18; i++) {
+        let offsetX = ((i * 59 + level * 23) % (c.width - 100));
+        let offsetY = 80 + ((i * 41 + level * 11) % 250);
+        if ((i + level) % (4 - Math.floor(level/8)) === 0) {
+            w.push({x: offsetX, y: offsetY, w: 70, h: 25});
         }
     }
 }
@@ -47,15 +35,15 @@ init();
 window.addEventListener("touchstart", (e) => {
     let t = e.touches[0];
     if(showMenu) {
-        let col = Math.floor(t.clientX / (c.width/4));
-        let row = Math.floor((t.clientY - 100) / 60);
-        let selected = row * 4 + col + 1;
+        let col = Math.floor(t.clientX / (c.width/3));
+        let row = Math.floor((t.clientY - 120) / 100);
+        let selected = row * 3 + col + 1;
         if(selected <= maxLevel) { level = selected; init(); }
         else showMenu = false;
-    } else if(t.clientY < 60 && t.clientX < 100) showMenu = true;
-    else if(gameOver) init();
+    } else if(t.clientY < 80 && t.clientX < 150) { showMenu = true; }
+    else if(gameOver) { init(); }
     else if(levelUp) { level++; if(level > maxLevel) maxLevel = level; init(); }
-    else b.active = true;
+    else { b.active = true; }
 });
 
 function loop() {
@@ -70,27 +58,29 @@ function loop() {
             });
             if(w.length === 0) levelUp = true;
             if(b.y > c.height) gameOver = true;
-        } else { b.x = p.x+50; }
+        } else { b.x = p.x+75; }
     }
     
     x.clearRect(0,0,c.width,c.height);
     x.fillStyle="white"; x.fillRect(p.x,p.y,p.w,p.h);
-    x.fillStyle="red"; x.beginPath(); x.arc(b.x,b.y,b.r,0,7); x.fill();
+    x.fillStyle="red"; x.beginPath(); x.arc(b.x,b.y,b.r,0,Math.PI*2); x.fill();
     x.fillStyle="cyan"; w.forEach(v => x.fillRect(v.x,v.y,v.w,v.h));
     
     if(showMenu) {
         x.fillStyle="black"; x.fillRect(0,0,c.width,c.height);
-        x.fillStyle="white"; x.fillText("MENU (Maks: " + maxLevel + ")", 20, 50);
+        x.fillStyle="white"; x.font="40px Arial"; x.fillText("SEVIYELER", 50, 80);
         for(let i=0; i<20; i++) {
             let active = (i + 1 <= maxLevel);
-            x.fillStyle = active ? "green" : "#222";
-            x.fillRect((i%4)*80+20, 100+Math.floor(i/4)*60, 60, 40);
-            x.fillStyle = "white"; x.fillText(i+1, (i%4)*80+40, 125+Math.floor(i/4)*60);
+            x.fillStyle = active ? "green" : "#333";
+            x.fillRect((i%3)*110+30, 120+Math.floor(i/3)*100, 90, 80);
+            x.fillStyle = "white"; x.font="30px Arial";
+            x.fillText(i+1, (i%3)*110+60, 175+Math.floor(i/3)*100);
         }
     } else {
-        x.fillStyle="white"; x.fillText("Lvl: "+level, 20, 20);
-        if(gameOver) x.fillText("TRY AGAIN", c.width/2-40, c.height/2);
-        if(levelUp) x.fillText("LEVEL UP - DEVAM", c.width/2-60, c.height/2);
+        x.fillStyle="white"; x.font="35px Arial"; x.fillText("Lvl: "+level, 20, 50);
+        x.fillText("MENU", 20, 100);
+        if(gameOver) { x.font="50px Arial"; x.fillText("TRY AGAIN", c.width/2-130, c.height/2); }
+        if(levelUp) { x.font="50px Arial"; x.fillText("LEVEL UP!", c.width/2-120, c.height/2); }
     }
     requestAnimationFrame(loop);
 }
