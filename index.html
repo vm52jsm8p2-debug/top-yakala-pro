@@ -1,23 +1,30 @@
 <style>
+    /* Katman ayarı: Oyunun en üstüne çıkar ve tıklamayı kabul eder */
     #level-ekrani {
         position: fixed !important;
-        top: 20% !important;
+        top: 30% !important;
         left: 50% !important;
         transform: translate(-50%, -50%) !important;
         z-index: 999999 !important;
         text-align: center !important;
-        pointer-events: none !important;
+        pointer-events: auto !important; /* Tıklanabilirliği açtık */
+        cursor: pointer !important;
     }
     .dev-yazi {
-        font-size: 150px !important;
+        font-size: 100px !important;
         color: #FFD700 !important;
-        text-shadow: 0 0 20px #000, 0 0 20px #000 !important;
-        font-family: Arial, sans-serif !important;
         font-weight: bold !important;
+        text-shadow: 4px 4px 10px #000 !important;
     }
     .dev-ok {
-        font-size: 200px !important;
+        font-size: 150px !important;
         color: #FF0000 !important;
-        text-shadow: 0 0 20px #000 !important;
+        margin-top: -20px !important;
     }
 </style>
+
+<!-- Tıklama fonksiyonu: Buraya oyununun başlatma kodunu yazmalısın -->
+<div id="level-ekrani" onclick="console.log('Ok tıklandı!'); alert('Ok çalışıyor!');">
+    <div class="dev-yazi">LEVEL 1</div>
+    <div class="dev-ok">⬇</div>
+</div>
