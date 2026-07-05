@@ -1,52 +1,46 @@
 <!DOCTYPE html>
 <html>
-<body style="margin:0; overflow:hidden; background:#222; touch-action:none;">
+<body style="margin:0; overflow:hidden; background:#556b2f; touch-action:none;">
 <canvas id="c"></canvas>
 <script>
     const c = document.getElementById("c");
     const ctx = c.getContext("2d");
-    c.width = window.innerWidth;
-    c.height = window.innerHeight;
+    c.width = window.innerWidth; c.height = window.innerHeight;
 
-    // Oyuncu, Arkadaş ve Düşmanlar
-    let p = {x:200, y:300, hp:100}, a = {x:250, y:350, hp:100}, en = [{x:500, y:300, hp:100, l:Date.now()}];
-    let bullets = [];
+    // Araba objesi
+    let car = { x: 200, y: 300, angle: 0, speed: 0 };
 
-    // Dokunmatik Kontrol
+    // Dokunmatik kontrol
     c.ontouchmove = (e) => {
         let t = e.touches[0];
-        if(t.clientX < window.innerWidth/2) {
-            p.x += (t.clientX - (p.x+15))/10; p.y += (t.clientY - (p.y+15))/10;
-        } else {
-            let angle = Math.atan2(t.clientY - p.y, t.clientX - p.x);
-            if(Date.now() % 150 < 30) bullets.push({x:p.x, y:p.y, vx:Math.cos(angle)*12, vy:Math.sin(angle)*12, color:'yellow', dmg:100});
+        // Sol taraf: Yön (Açı)
+        if (t.clientX < window.innerWidth / 2) {
+            car.angle = Math.atan2(t.clientY - car.y, t.clientX - car.x);
+        } 
+        // Sağ taraf: Gaz
+        else {
+            car.speed = 5;
         }
     };
+    c.ontouchend = () => { car.speed = 0; };
 
     function loop() {
-        ctx.fillStyle = "rgba(40, 40, 40, 0.4)";
-        ctx.fillRect(0,0,c.width,c.height);
+        // Arabayı hareket ettir
+        car.x += Math.cos(car.angle) * car.speed;
+        car.y += Math.sin(car.angle) * car.speed;
 
-        // Çizimler
-        ctx.fillStyle="blue"; ctx.fillRect(p.x, p.y, 40, 40);
-        ctx.fillStyle="lime"; ctx.fillRect(a.x, a.y, 40, 40);
+        ctx.clearRect(0, 0, c.width, c.height);
         
-        // Düşman Yapay Zekası ve Ateşi
-        en.forEach((e, i) => {
-            ctx.fillStyle="red"; ctx.fillRect(e.x, e.y, 40, 40);
-            if(Date.now() - e.l > 2000) {
-                bullets.push({x:e.x, y:e.y, vx:(p.x-e.x)/50, vy:(p.y-e.y)/50, color:'white', dmg:1});
-                e.l = Date.now();
-            }
-        });
-
-        // Mermiler
-        bullets.forEach((b, i) => {
-            b.x += b.vx; b.y += b.vy;
-            ctx.fillStyle = b.color;
-            ctx.fillRect(b.x, b.y, 10, 10);
-            if(b.x < 0 || b.x > c.width) bullets.splice(i, 1);
-        });
+        // Araba Çizimi (Dikdörtgen araba)
+        ctx.save();
+        ctx.translate(car.x, car.y);
+        ctx.rotate(car.angle);
+        ctx.fillStyle = "red";
+        ctx.fillRect(-20, -10, 40, 20); // Araba gövdesi
+        ctx.fillStyle = "black";
+        ctx.fillRect(15, -12, 5, 5); // Tekerlek ön sağ
+        ctx.fillRect(15, 7, 5, 5);   // Tekerlek arka sağ
+        ctx.restore();
 
         requestAnimationFrame(loop);
     }
