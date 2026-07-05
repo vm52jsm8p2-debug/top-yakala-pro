@@ -1,36 +1,23 @@
-<!DOCTYPE html>
-<html>
-<head>
 <style>
-  .yonlendirme-kutusu {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    font-family: sans-serif;
-    padding: 20px;
-    background-color: #f4f4f4;
-    border-radius: 10px;
-  }
-
-  .buyuk-yazi {
-    font-size: 48px; /* Yazı boyutu */
-    font-weight: bold;
-    color: #333;
-  }
-
-  .ok-isareti {
-    font-size: 60px; /* Okun boyutu */
-    color: #ff4500;  /* Okun rengi */
-    font-weight: bold;
-  }
+    #level-ekrani {
+        position: fixed !important;
+        top: 20% !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        z-index: 999999 !important;
+        text-align: center !important;
+        pointer-events: none !important;
+    }
+    .dev-yazi {
+        font-size: 150px !important;
+        color: #FFD700 !important;
+        text-shadow: 0 0 20px #000, 0 0 20px #000 !important;
+        font-family: Arial, sans-serif !important;
+        font-weight: bold !important;
+    }
+    .dev-ok {
+        font-size: 200px !important;
+        color: #FF0000 !important;
+        text-shadow: 0 0 20px #000 !important;
+    }
 </style>
-</head>
-<body>
-
-<div class="yonlendirme-kutusu">
-  <span class="buyuk-yazi">BURAYA BAKIN</span>
-  <span class="ok-isareti">➔</span>
-</div>
-
-</body>
-</html>
