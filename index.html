@@ -1,119 +1,69 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html>
 <head>
-<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <style>
-body { margin:0; background:#000; overflow:hidden; touch-action:none; user-select:none; -webkit-user-select:none; }
-canvas { display:block; width:100vw; height:100vh; }
+body { margin:0; background:#000; overflow:hidden; touch-action:none; }
+canvas { display:block; }
 .btn { position:absolute; bottom:0; width:50%; height:200px; }
-#l { left:0; } #r { right:0; }
-#ui { position:absolute; top:10px; left:10px; color:white; font-family:sans-serif; font-size:20px; pointer-events:none; }
 </style>
 </head>
 <body>
-<div id="ui">Seviye: 1</div>
 <canvas id="c"></canvas>
-<div id="l" class="btn"></div>
-<div id="r" class="btn"></div>
+<div id="l" class="btn" style="left:0"></div>
+<div id="r" class="btn" style="right:0"></div>
 <script>
 const c = document.getElementById("c");
 const x = c.getContext("2d");
 c.width = window.innerWidth;
 c.height = window.innerHeight;
 
-let paddle = {x:c.width/2-50, y:c.height-150, w:100, h:20};
-let ball = {x:0, y:0, dx:0, dy:0, r:15, active:false};
-let walls = [], spinners = [], lvl = 1, gameOver = false;
+let p = {x:c.width/2-50, y:c.height-150, w:100, h:20};
+let b = {x:c.width/2, y:c.height-170, dx:5, dy:-5, r:15, active:false};
+let w = [];
 
-function initWalls() {
-    walls = []; spinners = []; gameOver = false;
-    ball.active = false;
-    let rows = 3, cols = 5, gap = 15;
-    let cellW = (c.width - 40) / cols;
-    let cellH = 30;
-    for(let i=0; i<rows; i++) {
-        for(let j=0; j<cols; j++) {
-            if(Math.random() > 0.3) walls.push({ x: 20 + j*cellW + gap/2, y: 50 + i*(cellH+gap), w:cellW-gap, h:cellH });
+function init() {
+    w = [];
+    for(let i=0; i<5; i++) {
+        for(let j=0; j<3; j++) {
+            w.push({x:20+i*(c.width/5-10), y:50+j*40, w:c.width/5-20, h:20});
         }
     }
-    document.getElementById("ui").innerText = "Seviye: " + lvl;
 }
-initWalls();
+init();
 
-let l = false, r = false;
+let l=false, r=false;
+document.getElementById("l").addEventListener("touchstart",()=>l=true);
+document.getElementById("l").addEventListener("touchend",()=>l=false);
+document.getElementById("r").addEventListener("touchstart",()=>r=true);
+document.getElementById("r").addEventListener("touchend",()=>r=false);
 
-window.addEventListener("touchstart", (e) => {
-    if(gameOver) { lvl = 1; initWalls(); }
-    else if(!ball.active) {
-        let speed = 5 + (lvl - 1) * 0.8;
-        ball.dx = (Math.random() > 0.5 ? speed : -speed);
-        ball.dy = -speed;
-        ball.active = true;
+window.addEventListener("touchstart",()=>{if(!b.active) b.active=true;});
+
+function loop() {
+    if(l && p.x>0) p.x-=10;
+    if(r && p.x<c.width-p.w) p.x+=10;
+    
+    if(b.active) {
+        b.x+=b.dx; b.y+=b.dy;
+        if(b.x<0 || b.x>c.width) b.dx*=-1;
+        if(b.y<0) b.dy*=-1;
+        if(b.y>p.y && b.x>p.x && b.x<p.x+p.w) b.dy*=-1;
+        w.forEach((v,i)=>{
+            if(b.x>v.x && b.x<v.x+v.w && b.y>v.y && b.y<v.y+v.h) { w.splice(i,1); b.dy*=-1; }
+        });
+        if(b.y>c.height) { b.active=false; init(); }
+    } else {
+        b.x=p.x+p.w/2; b.y=p.y-b.r;
     }
-});
-
-document.getElementById("l").addEventListener("touchstart", (e) => { e.preventDefault(); l=true; });
-document.getElementById("l").addEventListener("touchend", () => l=false);
-document.getElementById("r").addEventListener("touchstart", (e) => { e.preventDefault(); r=true; });
-document.getElementById("r").addEventListener("touchend", () => r=false);
-
-function update() {
-    if(!gameOver) {
-        if(l && paddle.x > 0) paddle.x -= 10;
-        if(r && paddle.x < c.width - paddle.w) paddle.x += 10;
-        
-        if(!ball.active) {
-            ball.x = paddle.x + paddle.w/2;
-            ball.y = paddle.y - ball.r;
-        } else {
-            ball.x += ball.dx;
-            ball.y += ball.dy;
-            if(ball.x < ball.r || ball.x > c.width - ball.r) ball.dx *= -1;
-            if(ball.y < ball.r) ball.dy *= -1;
-            if(ball.y + ball.r > paddle.y && ball.y < paddle.y + paddle.h && ball.x > paddle.x && ball.x < paddle.x + paddle.w) ball.dy = -Math.abs(ball.dy);
-            
-            for(let i = walls.length - 1; i >= 0; i--) {
-                let v = walls[i];
-                if(ball.x + ball.r > v.x && ball.x - ball.r < v.x + v.w && ball.y + ball.r > v.y && ball.y - ball.r < v.y + v.h) {
-                    spinners.push({x: v.x+v.w/2, y: v.y+v.h/2, angle: 0, life: 30});
-                    walls.splice(i, 1);
-                    ball.dy *= -1;
-                }
-            }
-            if(walls.length === 0) { lvl++; if(lvl > 20) lvl = 1; initWalls(); }
-            if(ball.y > c.height) { gameOver = true; }
-        }
-    }
-
-    x.clearRect(0, 0, c.width, c.height);
     
-    // Raket ve Top
-    x.fillStyle = "white"; x.fillRect(paddle.x, paddle.y, paddle.w, paddle.h);
-    x.fillStyle = "red"; x.beginPath(); x.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2); x.fill();
-    
-    // Duvarlar
-    x.fillStyle = "cyan"; walls.forEach(v => x.fillRect(v.x, v.y, v.w, v.h));
-    
-    // Sarı Dönen Halka
-    spinners.forEach((s, i) => {
-        s.angle += 0.4; s.life--;
-        x.beginPath();
-        x.strokeStyle = "yellow";
-        x.lineWidth = 6;
-        x.arc(s.x, s.y, 15, s.angle, s.angle + Math.PI);
-        x.stroke();
-        if(s.life <= 0) spinners.splice(i, 1);
-    });
-    
-    if(gameOver) {
-        x.fillStyle = "blue"; x.fillRect(c.width/2 - 100, c.height/2 - 40, 200, 80);
-        x.fillStyle = "white"; x.font = "30px sans-serif"; x.textAlign = "center";
-        x.fillText("TRY AGAIN", c.width/2, c.height/2 + 10);
-    }
-    requestAnimationFrame(update);
+    x.clearRect(0,0,c.width,c.height);
+    x.fillStyle="white"; x.fillRect(p.x,p.y,p.w,p.h);
+    x.fillStyle="red"; x.beginPath(); x.arc(b.x,b.y,b.r,0,7); x.fill();
+    x.fillStyle="cyan"; w.forEach(v=>x.fillRect(v.x,v.y,v.w,v.h));
+    requestAnimationFrame(loop);
 }
-update();
+loop();
 </script>
 </body>
 </html>
