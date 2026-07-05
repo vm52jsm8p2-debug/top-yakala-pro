@@ -3,347 +3,103 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Süper Emir - Takım Savaşı</title>
+    <title>Süper Emir - Takım Savaşı Fix</title>
     <style>
-        * {
-            box-sizing: border-box;
-            -webkit-touch-callout: none;
-            -webkit-user-select: none;
-            user-select: none;
-        }
-        body {
-            margin: 0;
-            background-color: #1a1a1a;
-            color: white;
-            font-family: 'Arial', sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            overflow: hidden;
-            touch-action: none; 
-        }
-        canvas {
-            border: 4px solid #ffcc00;
-            background-color: #2c3e50; 
-            box-shadow: 0px 0px 20px rgba(0,0,0,0.5);
-            max-width: 100vw;
-            max-height: 85vh;
-        }
-        #ui {
-            margin-bottom: 5px;
-            font-size: 22px;
-            font-weight: bold;
-        }
+        body { margin: 0; background: #1a1a1a; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; overflow: hidden; touch-action: none; font-family: sans-serif; }
+        canvas { border: 4px solid #ffcc00; background: #2c3e50; max-width: 100vw; max-height: 80vh; }
+        #ui { font-size: 20px; font-weight: bold; margin-bottom: 5px; }
     </style>
 </head>
 <body>
-
-    <div id="ui">Skor: <span id="scoreVal">0</span> | Senin Canın: <span id="healthVal">100</span> | Arkadaşın Canı: <span id="allyHealthVal">100</span></div>
+    <div id="ui">Skor: <span id="scoreVal">0</span> | Can: <span id="healthVal">100</span> | Arkadaş Canı: <span id="allyHealthVal">100</span></div>
     <canvas id="gameCanvas" width="600" height="600"></canvas>
-    <p style="margin: 5px 0 0 0;">Sol: <b>Büyük Yürüme</b> | Sağ: <b>Büyük Ateş</b></p>
 
     <script>
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
 
-        let score = 0;
-        let health = 100;
-        let allyHealth = 100;
-        let gameOver = false;
-
-        // Oyuncu (Emir)
-        let player = {
-            x: 200, y: 300, radius: 20, speed: 4, color: '#3498db', angle: 0
-        };
-
-        // Takım Arkadaşı (AI)
-        let ally = {
-            x: 250, y: 350, radius: 20, speed: 2, color: '#2ecc71', angle: 0, lastShot: 0
-        };
-
-        // Büyütülmüş Joystick Özellikleri (maxRadius 50'den 75'e çıkarıldı)
-        let moveJoy = {
-            startX: 0, startY: 0, currentX: 0, currentY: 0, active: false, touchId: null, maxRadius: 75
-        };
-
-        let shootJoy = {
-            startX: 0, startY: 0, currentX: 0, currentY: 0, active: false, touchId: null, maxRadius: 75
-        };
-
-        let moveX = 0; let moveY = 0;
-        let shootX = 0; let shootY = 0;
-
-        let playerBullets = [];
-        let enemyBullets = [];
+        // Karakterler
+        let player = { x: 200, y: 300, radius: 20, color: '#3498db', angle: 0 };
+        let ally = { x: 250, y: 350, radius: 20, color: '#2ecc71', hp: 100, lastShot: 0 };
         let enemies = [];
-        
-        let lastShotTime = 0;
-        const playerShotCooldown = 200; 
-        const allyShotCooldown = 400;
+        let bullets = [];
+        let enemyBullets = [];
 
-        // Dokunmatik Kontroller
+        // Joystickler
+        let moveJoy = { active: false, startX: 0, startY: 0, currX: 0, currY: 0, id: null };
+        let shootJoy = { active: false, startX: 0, startY: 0, currX: 0, currY: 0, id: null };
+
+        // Dokunmatik
         canvas.addEventListener("touchstart", (e) => {
-            if (gameOver) return;
             e.preventDefault();
             const rect = canvas.getBoundingClientRect();
-
-            for (let i = 0; i < e.changedTouches.length; i++) {
-                let touch = e.changedTouches[i];
-                let touchX = touch.clientX - rect.left;
-                let touchY = touch.clientY - rect.top;
-
-                if (touchX < canvas.width / 2 && !moveJoy.active) {
-                    moveJoy.active = true;
-                    moveJoy.startX = touchX; moveJoy.startY = touchY;
-                    moveJoy.currentX = touchX; moveJoy.currentY = touchY;
-                    moveJoy.touchId = touch.identifier;
-                }
-                else if (touchX >= canvas.width / 2 && !shootJoy.active) {
-                    shootJoy.active = true;
-                    shootJoy.startX = touchX; shootJoy.startY = touchY;
-                    shootJoy.currentX = touchX; shootJoy.currentY = touchY;
-                    shootJoy.touchId = touch.identifier;
-                    shootX = 0; shootY = 0;
-                }
+            for (let t of e.changedTouches) {
+                let x = t.clientX - rect.left, y = t.clientY - rect.top;
+                if (x < 300 && !moveJoy.active) { moveJoy.active = true; moveJoy.startX = moveJoy.currX = x; moveJoy.startY = moveJoy.currY = y; moveJoy.id = t.identifier; }
+                else if (x >= 300 && !shootJoy.active) { shootJoy.active = true; shootJoy.startX = shootJoy.currX = x; shootJoy.startY = shootJoy.currY = y; shootJoy.id = t.identifier; }
             }
-        }, { passive: false });
+        }, {passive: false});
 
         canvas.addEventListener("touchmove", (e) => {
             e.preventDefault();
             const rect = canvas.getBoundingClientRect();
-
-            for (let i = 0; i < e.touches.length; i++) {
-                let touch = e.touches[i];
-                let touchX = touch.clientX - rect.left;
-                let touchY = touch.clientY - rect.top;
-
-                if (moveJoy.active && touch.identifier === moveJoy.touchId) {
-                    let dx = touchX - moveJoy.startX;
-                    let dy = touchY - moveJoy.startY;
-                    let dist = Math.hypot(dx, dy);
-
-                    if (dist > moveJoy.maxRadius) {
-                        let angle = Math.atan2(dy, dx);
-                        moveJoy.currentX = moveJoy.startX + Math.cos(angle) * moveJoy.maxRadius;
-                        moveJoy.currentY = moveJoy.startY + Math.sin(angle) * moveJoy.maxRadius;
-                    } else {
-                        moveJoy.currentX = touchX; moveJoy.currentY = touchY;
-                    }
-                    moveX = (moveJoy.currentX - moveJoy.startX) / moveJoy.maxRadius;
-                    moveY = (moveJoy.currentY - moveJoy.startY) / moveJoy.maxRadius;
-                }
-
-                if (shootJoy.active && touch.identifier === shootJoy.touchId) {
-                    let dx = touchX - shootJoy.startX;
-                    let dy = touchY - shootJoy.startY;
-                    let dist = Math.hypot(dx, dy);
-
-                    if (dist > shootJoy.maxRadius) {
-                        let angle = Math.atan2(dy, dx);
-                        shootJoy.currentX = shootJoy.startX + Math.cos(angle) * shootJoy.maxRadius;
-                        shootJoy.currentY = shootJoy.startY + Math.sin(angle) * shootJoy.maxRadius;
-                    } else {
-                        shootJoy.currentX = touchX;
-                        shootJoy.currentY = touchY;
-                    }
-                    shootX = dx / shootJoy.maxRadius;
-                    shootY = dy / shootJoy.maxRadius;
-                    
-                    if (Math.hypot(dx, dy) > 10) {
-                        player.angle = Math.atan2(dy, dx);
-                    }
-                }
+            for (let t of e.touches) {
+                let x = t.clientX - rect.left, y = t.clientY - rect.top;
+                if (moveJoy.active && t.identifier === moveJoy.id) { moveJoy.currX = x; moveJoy.currY = y; }
+                if (shootJoy.active && t.identifier === shootJoy.id) { shootJoy.currX = x; shootJoy.currY = y; player.angle = Math.atan2(y - shootJoy.startY, x - shootJoy.startX); }
             }
-        }, { passive: false });
+        }, {passive: false});
 
         canvas.addEventListener("touchend", (e) => {
-            for (let i = 0; i < e.changedTouches.length; i++) {
-                let touch = e.changedTouches[i];
-                if (moveJoy.active && touch.identifier === moveJoy.touchId) {
-                    moveJoy.active = false; moveJoy.touchId = null;
-                    moveX = 0; moveY = 0;
-                }
-                if (shootJoy.active && touch.identifier === shootJoy.touchId) {
-                    shootJoy.active = false; shootJoy.touchId = null;
-                    shootX = 0; shootY = 0;
-                }
+            for (let t of e.changedTouches) {
+                if (moveJoy.id === t.identifier) moveJoy.active = false;
+                if (shootJoy.id === t.identifier) shootJoy.active = false;
             }
         });
 
-        function playerShoot(angle) {
-            playerBullets.push({ x: player.x, y: player.y, vx: Math.cos(angle) * 8, vy: Math.sin(angle) * 8, radius: 6, color: '#f1c40f' });
-        }
+        // Düşman Ekleme
+        setInterval(() => { if(enemies.length < 3) enemies.push({ x: Math.random()*600, y: Math.random()*600, hp: 100, lastShot: Date.now() }); }, 3000);
 
-        function allyShoot(angle) {
-            playerBullets.push({ x: ally.x, y: ally.y, vx: Math.cos(angle) * 7, vy: Math.sin(angle) * 7, radius: 6, color: '#2ecc71' });
-        }
+        function update() {
+            // Hareket
+            if (moveJoy.active) { player.x += (moveJoy.currX - moveJoy.startX)/20; player.y += (moveJoy.currY - moveJoy.startY)/20; }
+            
+            // Ateş
+            if (shootJoy.active && Date.now() % 200 < 50) bullets.push({ x: player.x, y: player.y, vx: Math.cos(player.angle)*8, vy: Math.sin(player.angle)*8, owner: 'player' });
 
-        function enemyShoot(fromX, fromY, angle) {
-            enemyBullets.push({ x: fromX, y: fromY, vx: Math.cos(angle) * 4, vy: Math.sin(angle) * 4, radius: 5, color: '#e74c3c' });
-        }
-
-        // Düşman Azaltıldı: Spawn süresi uzatıldı (Daha az robot gelecek)
-        function spawnEnemy() {
-            if (gameOver) return;
-            let x, y;
-            if (Math.random() < 0.5) {
-                x = Math.random() < 0.5 ? -20 : canvas.width + 20; y = Math.random() * canvas.height;
-            } else {
-                x = Math.random() * canvas.width; y = Math.random() < 0.5 ? -20 : canvas.height + 20;
+            // AI (Arkadaş)
+            if(enemies.length > 0) {
+                let e = enemies[0];
+                let angle = Math.atan2(e.y - ally.y, e.x - ally.x);
+                if(Date.now() % 400 < 50) bullets.push({ x: ally.x, y: ally.y, vx: Math.cos(angle)*8, vy: Math.sin(angle)*8, owner: 'ally' });
             }
-            enemies.push({
-                x: x, y: y, radius: 15, speed: 1.0, color: '#e74c3c', lastShot: Date.now() + Math.random() * 1000, hp: 100
+
+            // Düşman Ateşi
+            enemies.forEach(e => {
+                if(Date.now() - e.lastShot > 2000) {
+                    let angle = Math.atan2(player.y - e.y, player.x - e.x);
+                    enemyBullets.push({ x: e.x, y: e.y, vx: Math.cos(angle)*4, vy: Math.sin(angle)*4 });
+                    e.lastShot = Date.now();
+                }
             });
-            // 3.5 saniyede bir düşman doğacak şekilde azaltıldı
-            setTimeout(spawnEnemy, 3500);
+
+            // Mermi Çiz/Güncelle
+            bullets.forEach((b, i) => { b.x += b.vx; b.y += b.vy; });
+            enemyBullets.forEach((b, i) => { b.x += b.vx; b.y += b.vy; });
+
+            draw();
+            requestAnimationFrame(update);
         }
-        spawnEnemy();
 
-        function gameLoop() {
-            if (gameOver) {
-                ctx.fillStyle = "rgba(0, 0, 0, 0.8)"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.fillStyle = "white"; ctx.font = "40px Arial";
-                ctx.fillText("OYUN BİTTİ", canvas.width/2 - 110, canvas.height/2);
-                return;
-            }
-
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // 1. Oyuncu Hareketi
-            if (moveJoy.active) {
-                player.x += moveX * player.speed; player.y += moveY * player.speed;
-                if (!shootJoy.active) player.angle = Math.atan2(moveY, moveX);
-            }
-            // Ekran sınırları kontrolü
-            player.x = Math.max(player.radius, Math.min(canvas.width - player.radius, player.x));
-            player.y = Math.max(player.radius, Math.min(canvas.height - player.radius, player.y));
-
-            if (shootJoy.active) {
-                let currentTime = Date.now();
-                if (Math.hypot(shootX, shootY) > 0.2 && currentTime - lastShotTime > playerShotCooldown) {
-                    playerShoot(player.angle); lastShotTime = currentTime;
-                }
-            }
-
-            // 2. Takım Arkadaşı Yapay Zekası (En yakın düşmanı bul ve ona git/ateş et)
-            if (enemies.length > 0 && allyHealth > 0) {
-                let closest = enemies[0];
-                let minDist = Math.hypot(closest.x - ally.x, closest.y - ally.y);
-                for (let e of enemies) {
-                    let d = Math.hypot(e.x - ally.x, e.y - ally.y);
-                    if (d < minDist) { minDist = d; closest = e; }
-                }
-
-                let adx = closest.x - ally.x; let ady = closest.y - ally.y;
-                ally.angle = Math.atan2(ady, adx);
-
-                // Düşmana çok yakın değilse yaklaşsın
-                if (minDist > 120) {
-                    ally.x += Math.cos(ally.angle) * ally.speed;
-                    ally.y += Math.sin(ally.angle) * ally.speed;
-                }
-
-                let now = Date.now();
-                if (now - ally.lastShot > allyShotCooldown) {
-                    allyShoot(ally.angle); ally.lastShot = now;
-                }
-            }
-            ally.x = Math.max(ally.radius, Math.min(canvas.width - ally.radius, ally.x));
-            ally.y = Math.max(ally.radius, Math.min(canvas.height - ally.radius, ally.y));
-
-            // Oyuncu ve Takım Arkadaşını Çiz
-            ctx.beginPath(); ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2); ctx.fillStyle = player.color; ctx.fill(); ctx.closePath();
-            ctx.beginPath(); ctx.moveTo(player.x, player.y); ctx.lineTo(player.x + Math.cos(player.angle) * 30, player.y + Math.sin(player.angle) * 30); ctx.strokeStyle = "#fff"; ctx.lineWidth = 5; ctx.stroke(); ctx.closePath();
-
-            if (allyHealth > 0) {
-                ctx.beginPath(); ctx.arc(ally.x, ally.y, ally.radius, 0, Math.PI * 2); ctx.fillStyle = ally.color; ctx.fill(); ctx.closePath();
-                ctx.beginPath(); ctx.moveTo(ally.x, ally.y); ctx.lineTo(ally.x + Math.cos(ally.angle) * 30, ally.y + Math.sin(ally.angle) * 30); ctx.strokeStyle = "#fff"; ctx.lineWidth = 4; ctx.stroke(); ctx.closePath();
-            }
-
-            // 3. Bizim Mermileri Güncelle (Düşmanlara 100 HASAR veriyor - Tek vuruş)
-            for (let i = playerBullets.length - 1; i >= 0; i--) {
-                let b = playerBullets[i]; b.x += b.vx; b.y += b.vy;
-                if (b.x < 0 || b.x > canvas.width || b.y < 0 || b.y > canvas.height) { playerBullets.splice(i, 1); continue; }
-
-                ctx.beginPath(); ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2); ctx.fillStyle = b.color; ctx.fill(); ctx.closePath();
-
-                for (let j = enemies.length - 1; j >= 0; j--) {
-                    let e = enemies[j];
-                    if (Math.hypot(b.x - e.x, b.y - e.y) < b.radius + e.radius) {
-                        e.hp -= 100; // Biz ve dostumuz 100 hasar veriyoruz!
-                        playerBullets.splice(i, 1);
-                        if (e.hp <= 0) { enemies.splice(j, 1); score += 10; document.getElementById("scoreVal").innerText = score; }
-                        break;
-                    }
-                }
-            }
-
-            // 4. Düşmanları Güncelle ve Onların Ateş Etmesi (1 Hasar verir)
-            let currentTime = Date.now();
-            for (let i = enemies.length - 1; i >= 0; i--) {
-                let e = enemies[i];
-                // En yakın hedefi seç (Sen veya takım arkadaşın)
-                let target = player;
-                if (allyHealth > 0 && Math.hypot(ally.x - e.x, ally.y - e.y) < Math.hypot(player.x - e.x, player.y - e.y)) {
-                    target = ally;
-                }
-
-                let edx = target.x - e.x; let edy = target.y - e.y;
-                let eAngle = Math.atan2(edy, edx);
-                e.x += Math.cos(eAngle) * e.speed; e.y += Math.sin(eAngle) * e.speed;
-
-                ctx.beginPath(); ctx.arc(e.x, e.y, e.radius, 0, Math.PI * 2); ctx.fillStyle = e.color; ctx.fill(); ctx.closePath();
-
-                // Robot ateş mekaniği (Her 2 saniyede bir ateş ederler)
-                if (currentTime - e.lastShot > 2000) {
-                    enemyShoot(e.x, e.y, eAngle); e.lastShot = currentTime;
-                }
-
-                // Göğüs göğüse çarpışma hasarı
-                if (Math.hypot(player.x - e.x, player.y - e.y) < player.radius + e.radius) {
-                    enemies.splice(i, 1); health -= 5; document.getElementById("healthVal").innerText = Math.max(0, health);
-                    if (health <= 0) gameOver = true; continue;
-                }
-                if (allyHealth > 0 && Math.hypot(ally.x - e.x, ally.y - e.y) < ally.radius + e.radius) {
-                    enemies.splice(i, 1); allyHealth -= 5; document.getElementById("allyHealthVal").innerText = Math.max(0, allyHealth);
-                }
-            }
-
-            // 5. Düşman Mermilerini Güncelle (Sadece 1 Hasar)
-            for (let i = enemyBullets.length - 1; i >= 0; i--) {
-                let b = enemyBullets[i]; b.x += b.vx; b.y += b.vy;
-                if (b.x < 0 || b.x > canvas.width || b.y < 0 || b.y > canvas.height) { enemyBullets.splice(i, 1); continue; }
-
-                ctx.beginPath(); ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2); ctx.fillStyle = b.color; ctx.fill(); ctx.closePath();
-
-                // Oyuncuya çarptı mı?
-                if (Math.hypot(b.x - player.x, b.y - player.y) < b.radius + player.radius) {
-                    enemyBullets.splice(i, 1); health -= 1; // Sadece 1 hasar
-                    document.getElementById("healthVal").innerText = Math.max(0, health);
-                    if (health <= 0) gameOver = true; continue;
-                }
-                // Takım arkadaşına çarptı mı?
-                if (allyHealth > 0 && Math.hypot(b.x - ally.x, b.y - ally.y) < b.radius + ally.radius) {
-                    enemyBullets.splice(i, 1); allyHealth -= 1; // Sadece 1 hasar
-                    document.getElementById("allyHealthVal").innerText = Math.max(0, allyHealth);
-                }
-            }
-
-            // Büyük Joystick Görsellerini Çiz
-            if (moveJoy.active) {
-                ctx.beginPath(); ctx.arc(moveJoy.startX, moveJoy.startY, moveJoy.maxRadius, 0, Math.PI * 2); ctx.fillStyle = "rgba(255, 255, 255, 0.12)"; ctx.fill(); ctx.closePath();
-                ctx.beginPath(); ctx.arc(moveJoy.currentX, moveJoy.currentY, 28, 0, Math.PI * 2); ctx.fillStyle = "rgba(52, 152, 219, 0.6)"; ctx.fill(); ctx.closePath();
-            }
-            if (shootJoy.active) {
-                ctx.beginPath(); ctx.arc(shootJoy.startX, shootJoy.startY, shootJoy.maxRadius, 0, Math.PI * 2); ctx.fillStyle = "rgba(255, 255, 255, 0.12)"; ctx.fill(); ctx.closePath();
-                ctx.beginPath(); ctx.arc(shootJoy.currentX, shootJoy.currentY, 28, 0, Math.PI * 2); ctx.fillStyle = "rgba(231, 76, 60, 0.6)"; ctx.fill(); ctx.closePath();
-            }
-
-            requestAnimationFrame(gameLoop);
+        function draw() {
+            ctx.clearRect(0, 0, 600, 600);
+            ctx.fillStyle = player.color; ctx.beginPath(); ctx.arc(player.x, player.y, 20, 0, 7); ctx.fill();
+            ctx.fillStyle = ally.color; ctx.beginPath(); ctx.arc(ally.x, ally.y, 20, 0, 7); ctx.fill();
+            enemies.forEach(e => { ctx.fillStyle = 'red'; ctx.beginPath(); ctx.arc(e.x, e.y, 20, 0, 7); ctx.fill(); });
+            bullets.forEach(b => { ctx.fillStyle = 'yellow'; ctx.fillRect(b.x, b.y, 5, 5); });
+            enemyBullets.forEach(b => { ctx.fillStyle = 'white'; ctx.fillRect(b.x, b.y, 5, 5); });
         }
-        gameLoop();
+        update();
     </script>
 </body>
 </html>
