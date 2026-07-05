@@ -22,17 +22,20 @@
 
     var p = {x:c.width/2-100, y:c.height-300, w:200, h:30};
     var b = {x:c.width/2, y:c.height-350, dx:7, dy:-7, r:15, active:false};
-    var w = [], level = 1, maxLevel = 1, gameOver = false, levelUp = false, showMenu = false;
+    var w = [], level = 1, maxLevel = 1, gameOver = false, levelUp = false, showMenu = false, loading = false;
 
     function init() {
-        w = []; gameOver = false; levelUp = false; showMenu = false; b.active = false;
-        p.x = c.width/2-100; b.x = p.x+100; b.y = p.y-20;
-        // Her seviyede farklı dizilim (Simetrik olmayan)
-        for(var i=0; i<15; i++) {
-            if ((i + level * 3) % (4 - (level%3)) !== 0) {
-                w.push({x: 30+(i%4)*90, y: 120+Math.floor(i/4)*70, w:80, h:40});
+        loading = true; // Yükleniyor modunu aç
+        setTimeout(function() {
+            w = []; gameOver = false; levelUp = false; showMenu = false; b.active = false;
+            p.x = c.width/2-100; b.x = p.x+100; b.y = p.y-20;
+            for(var i=0; i<15; i++) {
+                if ((i + level * 3) % (4 - (level%3)) !== 0) {
+                    w.push({x: 30+(i%4)*90, y: 120+Math.floor(i/4)*70, w:80, h:40});
+                }
             }
-        }
+            loading = false;
+        }, 800); // 0.8 saniyelik yükleme simülasyonu
     }
     init();
 
@@ -40,6 +43,7 @@
     document.getElementById("r").addEventListener("touchstart", function(){ if(p.x < c.width-p.w) p.x += 50; });
 
     window.addEventListener("touchstart", function(e){
+        if(loading) return; // Yüklenirken tıklama
         var t = e.touches[0];
         if(showMenu) {
             var col = Math.floor(t.clientX / 150);
@@ -53,8 +57,17 @@
         else b.active = true;
     });
 
+    var angle = 0;
     function loop() {
-        if(!gameOver && !levelUp && !showMenu) {
+        x.clearRect(0,0,c.width,c.height);
+        
+        if(loading) {
+            x.fillStyle="white"; x.font="50px Arial";
+            x.fillText("YUKLENIYOR...", c.width/2-150, c.height/2);
+            x.beginPath(); x.arc(c.width/2, c.height/2+100, 30, angle, angle+Math.PI);
+            x.strokeStyle="yellow"; x.lineWidth=10; x.stroke();
+            angle += 0.1;
+        } else if(!gameOver && !levelUp && !showMenu) {
             if(b.active) {
                 b.x += b.dx; b.y += b.dy;
                 if(b.x<0 || b.x>c.width) b.dx *= -1;
@@ -68,27 +81,26 @@
                 if(w.length === 0) levelUp = true;
                 if(b.y > c.height) gameOver = true;
             } else { b.x = p.x+100; }
-        }
-        
-        x.clearRect(0,0,c.width,c.height);
-        x.fillStyle="white"; x.fillRect(p.x,p.y,p.w,p.h);
-        x.fillStyle="red"; x.beginPath(); x.arc(b.x,b.y,b.r,0,Math.PI*2); x.fill();
-        x.fillStyle="cyan";
-        for(var i=0; i<w.length; i++){ x.fillRect(w[i].x, w[i].y, w[i].w, w[i].h); }
-        
-        x.fillStyle="white"; x.font="50px Arial";
-        if(showMenu) {
-            x.fillStyle="black"; x.fillRect(0,0,c.width,c.height);
-            x.fillStyle="white"; x.fillText("SEVIYELER (Maks: "+maxLevel+")", 50, 100);
-            for(var i=0; i<maxLevel; i++){
-                x.fillStyle="green"; x.fillRect((i%3)*140+50, 150+Math.floor(i/3)*140, 120, 100);
-                x.fillStyle="white"; x.fillText(i+1, (i%3)*140+90, 220+Math.floor(i/3)*140);
-            }
+            x.fillStyle="white"; x.fillRect(p.x,p.y,p.w,p.h);
+            x.fillStyle="yellow"; x.beginPath(); x.arc(b.x,b.y,b.r,0,Math.PI*2); x.fill();
+            x.fillStyle="cyan";
+            for(var i=0; i<w.length; i++){ x.fillRect(w[i].x, w[i].y, w[i].w, w[i].h); }
         } else {
-            x.fillText("Lvl: "+level, 40, 70);
-            x.fillText("MENU", 40, 140);
-            if(gameOver) x.fillText("GAME OVER", c.width/2-140, c.height/2);
-            if(levelUp) x.fillText("LEVEL UP!", c.width/2-120, c.height/2);
+            // Menü ve durum ekranları
+            if(showMenu) {
+                x.fillStyle="black"; x.fillRect(0,0,c.width,c.height);
+                x.fillStyle="white"; x.font="50px Arial"; x.fillText("SEVIYELER", 50, 100);
+                for(var i=0; i<maxLevel; i++){
+                    x.fillStyle="green"; x.fillRect((i%3)*140+50, 150+Math.floor(i/3)*140, 120, 100);
+                    x.fillStyle="white"; x.fillText(i+1, (i%3)*140+90, 220+Math.floor(i/3)*140);
+                }
+            } else {
+                x.fillStyle="white"; x.font="50px Arial";
+                x.fillText("Lvl: "+level, 40, 70);
+                x.fillText("MENU", 40, 140);
+                if(gameOver) x.fillText("GAME OVER", c.width/2-140, c.height/2);
+                if(levelUp) x.fillText("LEVEL UP!", c.width/2-120, c.height/2);
+            }
         }
         requestAnimationFrame(loop);
     }
