@@ -1,116 +1,146 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<style>
-    body { margin:0; background:#000; overflow:hidden; touch-action:none; }
-    canvas { display:block; }
-    .btn { position:absolute; bottom:0; width:50%; height:200px; touch-action:none; }
-</style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <style>
+        body { margin: 0; overflow: hidden; background: #222; touch-action: none; /* Mobilde kaydırmayı engeller */ }
+        canvas { display: block; }
+    </style>
 </head>
 <body>
-<canvas id="c"></canvas>
-<div id="l" class="btn" style="left:0"></div>
-<div id="r" class="btn" style="right:0"></div>
+<canvas id="gameCanvas"></canvas>
 <script>
-const c = document.getElementById("c");
-const x = c.getContext("2d");
-c.width = window.innerWidth; c.height = window.innerHeight;
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
 
-let p = {x:c.width/2-50, y:c.height-150, w:100, h:20};
-let b = {x:c.width/2, y:c.height-170, dx:5, dy:-5, r:15, active:false};
-let w = [], gameOver = false, levelUp = false, showMenu = false, level = 1, maxLevel = 1;
+    // Ekran boyutunu tam kapla
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
 
-function init() {
-    w = []; gameOver = false; levelUp = false; showMenu = false;
-    b.active = false;
-    p.x = c.width/2 - 50;
-    b.x = p.x + p.w/2; b.y = p.y - b.r;
-    
-    let cols = 5;
-    let gap = 10;
-    let wW = (c.width - (cols + 1) * gap) / cols;
-    let rows = Math.min(3 + Math.floor((level-1)/4), 6); 
-    for(let i=0; i<cols; i++) {
-        for(let j=0; j<rows; j++) {
-            w.push({x:gap + i*(wW+gap), y:70+j*40, w:wW, h:20});
+    // Top ayarları
+    let x = canvas.width / 2;
+    let y = canvas.height - 100;
+    let dx = 4;
+    let dy = -4;
+    let ballRadius = 10;
+
+    // Kontrol Çubuğu (Raket)
+    let paddleHeight = 15;
+    let paddleWidth = 100;
+    let paddleX = (canvas.width - paddleWidth) / 2;
+
+    // Mavi Duvarlar (Tuğlalar)
+    let brickRowCount = 5; // 5 satır tuğla
+    let brickColumnCount = Math.floor(canvas.width / 75); // Ekrana sığacak kadar sütun
+    let brickWidth = 65;
+    let brickHeight = 20;
+    let brickPadding = 10;
+    let brickOffsetTop = 50;
+    let brickOffsetLeft = (canvas.width - (brickColumnCount * (brickWidth + brickPadding))) / 2;
+
+    let bricks = [];
+    for(let c = 0; c < brickColumnCount; c++) {
+        bricks[c] = [];
+        for(let r = 0; r < brickRowCount; r++) {
+            bricks[c][r] = { x: 0, y: 0, status: 1 }; // status 1: kırılmamış
         }
     }
-}
-init();
 
-let l=false, r=false;
-document.getElementById("l").addEventListener("touchstart",(e)=>{e.preventDefault(); l=true;});
-document.getElementById("l").addEventListener("touchend",(e)=>{e.preventDefault(); l=false;});
-document.getElementById("r").addEventListener("touchstart",(e)=>{e.preventDefault(); r=true;});
-document.getElementById("r").addEventListener("touchend",(e)=>{e.preventDefault(); r=false;});
-
-window.addEventListener("touchstart",(e)=>{
-    let rect = c.getBoundingClientRect();
-    let tx = e.touches[0].clientX - rect.left;
-    let ty = e.touches[0].clientY - rect.top;
-    
-    if(showMenu) {
-        let boxSize = 80;
-        let mX = Math.floor((tx - 20) / (boxSize + 10));
-        let mY = Math.floor((ty - 100) / (boxSize + 10));
-        let idx = mY * 3 + mX + 1;
-        if(idx >= 1 && idx <= 20 && idx <= maxLevel) {
-            level = idx; init();
+    // Parmağınla çubuğu hareket ettirme
+    canvas.addEventListener("touchmove", (e) => {
+        let relativeX = e.touches[0].clientX;
+        if(relativeX > 0 && relativeX < canvas.width) {
+            paddleX = relativeX - paddleWidth / 2;
         }
-        return;
-    }
-    
-    if(tx < 100 && ty < 60) { showMenu = true; return; }
-    
-    if(levelUp && ty > c.height/2+20 && tx > c.width/2-100 && tx < c.width/2+100) { 
-        level++; if(level > maxLevel) maxLevel = level; init(); 
-    }
-    else if(gameOver && ty > c.height/2-40 && tx > c.width/2-100 && tx < c.width/2+100) { init(); }
-    else if(!b.active && !gameOver && !levelUp) b.active = true;
-});
+    });
 
-function loop() {
-    if(!gameOver && !levelUp && !showMenu) {
-        if(l && p.x>0) p.x-=10;
-        if(r && p.x<c.width-p.w) p.x+=10;
-        if(b.active) {
-            b.x+=b.dx + (level*0.1); b.y+=b.dy - (level*0.1);
-            if(b.x<b.r || b.x>c.width-b.r) b.dx*=-1;
-            if(b.y<b.r) b.dy*=-1;
-            if(b.y>p.y-b.r && b.x>p.x && b.x<p.x+p.w) b.dy=-Math.abs(b.dy);
-            w.forEach((v,i)=>{
-                if(b.x>v.x && b.x<v.x+v.w && b.y>v.y && b.y<v.y+v.h) { w.splice(i,1); b.dy*=-1; }
-            });
-            if(w.length === 0) { levelUp = true; if(level >= maxLevel) maxLevel = level + 1; }
-            if(b.y>c.height) gameOver = true;
-        } else { b.x=p.x+p.w/2; b.y=p.y-b.r; }
-    }
-    
-    x.clearRect(0,0,c.width,c.height);
-    x.fillStyle="white"; x.fillRect(p.x,p.y,p.w,p.h);
-    x.fillStyle="red"; x.beginPath(); x.arc(b.x,b.y,b.r,0,Math.PI*2); x.fill();
-    x.fillStyle="cyan"; w.forEach(v=>x.fillRect(v.x,v.y,v.w,v.h));
-    
-    x.fillStyle="white"; x.font="30px Arial"; x.fillText("MENU", 20, 40);
-    x.font="20px Arial"; x.fillText("Lvl: "+level, c.width-60, 30);
-    
-    if(showMenu) {
-        x.fillStyle="black"; x.fillRect(0,0,c.width,c.height);
-        x.fillStyle="white"; x.fillText("SEVIYE SEC", c.width/2, 50);
-        for(let i=0; i<20; i++) {
-            x.fillStyle = (i < maxLevel) ? "#444" : "#222";
-            x.fillRect(20+(i%3)*90, 100+Math.floor(i/3)*90, 80, 80);
-            x.fillStyle = (i < maxLevel) ? "white" : "#555";
-            x.fillText(i+1, 60+(i%3)*90, 150+Math.floor(i/3)*90);
+    // Bilgisayardan fare ile oynarsan diye
+    canvas.addEventListener("mousemove", (e) => {
+        let relativeX = e.clientX;
+        if(relativeX > 0 && relativeX < canvas.width) {
+            paddleX = relativeX - paddleWidth / 2;
+        }
+    });
+
+    function drawBricks() {
+        for(let c = 0; c < brickColumnCount; c++) {
+            for(let r = 0; r < brickRowCount; r++) {
+                if(bricks[c][r].status === 1) { // Eğer tuğla duruyorsa çiz
+                    let brickX = (c * (brickWidth + brickPadding)) + brickOffsetLeft;
+                    let brickY = (r * (brickHeight + brickPadding)) + brickOffsetTop;
+                    bricks[c][r].x = brickX;
+                    bricks[c][r].y = brickY;
+                    ctx.beginPath();
+                    ctx.rect(brickX, brickY, brickWidth, brickHeight);
+                    ctx.fillStyle = "#0095DD"; // Mavi renk
+                    ctx.fill();
+                    ctx.closePath();
+                }
+            }
         }
     }
-    if(gameOver) { x.fillStyle="blue"; x.fillRect(c.width/2-100, c.height/2-40, 200, 80); x.fillStyle="white"; x.fillText("TRY AGAIN", c.width/2, c.height/2+10); }
-    if(levelUp) { x.fillStyle="green"; x.fillRect(c.width/2-100, c.height/2-40, 200, 140); x.fillStyle="white"; x.fillText("LEVEL UP!", c.width/2, c.height/2); x.fillStyle="yellow"; x.fillRect(c.width/2-100, c.height/2+20, 200, 60); x.fillStyle="black"; x.fillText("DEVAM", c.width/2, c.height/2+60); }
-    requestAnimationFrame(loop);
-}
-loop();
+
+    function collisionDetection() {
+        for(let c = 0; c < brickColumnCount; c++) {
+            for(let r = 0; r < brickRowCount; r++) {
+                let b = bricks[c][r];
+                if(b.status === 1) { // Top tuğlaya çarptı mı?
+                    if(x > b.x && x < b.x + brickWidth && y > b.y && y < b.y + brickHeight) {
+                        dy = -dy; // Topu sektir
+                        b.status = 0; // Tuğlayı yok et
+                    }
+                }
+            }
+        }
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        drawBricks();
+
+        // Topu çiz (Kırmızı)
+        ctx.beginPath();
+        ctx.arc(x, y, ballRadius, 0, Math.PI * 2);
+        ctx.fillStyle = "#FF0000";
+        ctx.fill();
+        ctx.closePath();
+
+        // Çubuğu çiz (Beyaz)
+        ctx.beginPath();
+        ctx.rect(paddleX, canvas.height - 40, paddleWidth, paddleHeight);
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fill();
+        ctx.closePath();
+
+        collisionDetection();
+
+        // Sağ-Sol Duvara çarpma
+        if(x + dx > canvas.width - ballRadius || x + dx < ballRadius) {
+            dx = -dx;
+        }
+        
+        // Üst duvara çarpma
+        if(y + dy < ballRadius) {
+            dy = -dy;
+        } 
+        // Çubuğa (Rakete) çarpma
+        else if(y + dy > canvas.height - ballRadius - 40) {
+            if(x > paddleX && x < paddleX + paddleWidth) {
+                dy = -dy; // Kurtardın, sekti!
+            } else if (y + dy > canvas.height - ballRadius) {
+                // Topu yere düşürdün (Oyun şimdilik bitmesin diye yerden de sekiyor)
+                dy = -dy; 
+            }
+        }
+
+        x += dx;
+        y += dy;
+        
+        requestAnimationFrame(draw);
+    }
+    
+    draw();
 </script>
 </body>
 </html>
