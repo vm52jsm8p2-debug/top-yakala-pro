@@ -2,38 +2,69 @@
 <html>
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <style>
-body { margin: 0; background: #000; overflow: hidden; }
-canvas { display: block; }
+    body { margin:0; background:#000; overflow:hidden; touch-action:none; }
+    canvas { display:block; }
+    .controls { position:absolute; bottom:0; width:100%; height:200px; display:flex; }
+    .btn { flex:1; touch-action:none; }
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
+<div class="controls">
+    <div id="left" class="btn"></div>
+    <div id="right" class="btn"></div>
+</div>
 <script>
 var c = document.getElementById("c");
 var x = c.getContext("2d");
 c.width = window.innerWidth;
 c.height = window.innerHeight;
 
-var p = {x: 100, y: 500, w: 100, h: 20};
-var b = {x: 150, y: 400, dx: 5, dy: 5};
+var p = {x:c.width/2-100, y:c.height-250, w:200, h:30};
+var b = {x:c.width/2, y:c.height-300, dx:6, dy:-6, r:15, active:false};
+var w = [], level = 1, max = 1, showMenu = false, loading = false;
+
+function init() {
+    loading = true;
+    setTimeout(function(){
+        w = []; b.active = false; showMenu = false;
+        for(var i=0; i<10; i++) {
+            w.push({x: 30+(i%5)*70, y: 100+Math.floor(i/5)*50, w:60, h:30});
+        }
+        loading = false;
+    }, 1000);
+}
+init();
+
+document.getElementById("left").addEventListener("touchstart", function(){ if(p.x > 0) p.x -= 40; });
+document.getElementById("right").addEventListener("touchstart", function(){ if(p.x < c.width-p.w) p.x += 40; });
+
+window.addEventListener("touchstart", function(e){
+    if(loading) return;
+    var t = e.touches[0];
+    if(t.clientY < 100 && t.clientX < 150) showMenu = !showMenu;
+    else if(!b.active) b.active = true;
+});
 
 function loop() {
-    x.clearRect(0, 0, c.width, c.height);
-    x.fillStyle = "white";
-    x.fillRect(p.x, p.y, p.w, p.h);
-    
-    b.x += b.dx;
-    b.y += b.dy;
-    
-    if (b.x < 0 || b.x > c.width) b.dx *= -1;
-    if (b.y < 0) b.dy *= -1;
-    
-    x.fillStyle = "red";
-    x.beginPath();
-    x.arc(b.x, b.y, 10, 0, 7);
-    x.fill();
-    
+    x.clearRect(0,0,c.width,c.height);
+    if(loading) {
+        x.fillStyle="white"; x.font="40px Arial"; x.fillText("YUKLENIYOR...", c.width/2-120, c.height/2);
+    } else {
+        x.fillStyle="white"; x.fillRect(p.x,p.y,p.w,p.h);
+        x.fillStyle="yellow"; x.beginPath(); x.arc(b.x,b.y,b.r,0,Math.PI*2); x.fill();
+        x.fillStyle="cyan";
+        for(var i=0; i<w.length; i++){ x.fillRect(w[i].x, w[i].y, w[i].w, w[i].h); }
+        if(b.active) {
+            b.x += b.dx; b.y += b.dy;
+            if(b.x<0 || b.x>c.width) b.dx *= -1;
+            if(b.y<0) b.dy *= -1;
+            if(b.y > p.y && b.x > p.x && b.x < p.x+p.w) b.dy = -Math.abs(b.dy);
+        } else { b.x = p.x+100; }
+        x.fillStyle="white"; x.fillText("MENU", 20, 70);
+    }
     requestAnimationFrame(loop);
 }
 loop();
