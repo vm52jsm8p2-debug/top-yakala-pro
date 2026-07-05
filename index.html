@@ -1,17 +1,21 @@
 <!DOCTYPE html>
-<html>
+<html lang="tr">
 <head>
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <style>
-body { margin:0; background:#000; overflow:hidden; touch-action:none; }
-canvas { display:block; }
-.btn { position:absolute; bottom:0; width:50%; height:200px; }
+    body { margin:0; background:#000; overflow:hidden; touch-action:none; }
+    canvas { display:block; }
+    .control { 
+        position:absolute; bottom:0; width:50%; height:200px; 
+        user-select: none; -webkit-user-select: none; touch-action: none;
+    }
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
-<div id="l" class="btn" style="left:0"></div>
-<div id="r" class="btn" style="right:0"></div>
+<div id="l" class="control" style="left:0"></div>
+<div id="r" class="control" style="right:0"></div>
 <script>
 const c = document.getElementById("c");
 const x = c.getContext("2d");
@@ -19,31 +23,48 @@ c.width = window.innerWidth; c.height = window.innerHeight;
 
 let p = {x:c.width/2-50, y:c.height-150, w:100, h:20};
 let b = {x:c.width/2, y:c.height-170, dx:5, dy:-5, r:15, active:false};
-let w = [], gameOver = false;
+let w = [], gameOver = false, levelUp = false, level = 1;
 
 function init() {
-    w = []; gameOver = false;
-    for(let i=0; i<5; i++) {
+    w = []; gameOver = false; levelUp = false;
+    b.active = false;
+    p.x = c.width/2 - 50;
+    b.x = p.x + p.w/2; b.y = p.y - b.r;
+    
+    let cols = 5;
+    let gap = 10;
+    let wW = (c.width - (cols + 1) * gap) / cols;
+    for(let i=0; i<cols; i++) {
         for(let j=0; j<3; j++) {
-            w.push({x:20+i*(c.width/5-10), y:50+j*40, w:c.width/5-20, h:20});
+            w.push({x:gap + i*(wW+gap), y:50+j*40, w:wW, h:20});
         }
     }
 }
 init();
 
 let l=false, r=false;
-document.getElementById("l").addEventListener("touchstart",()=>l=true);
-document.getElementById("l").addEventListener("touchend",()=>l=false);
-document.getElementById("r").addEventListener("touchstart",()=>r=true);
-document.getElementById("r").addEventListener("touchend",()=>r=false);
+document.getElementById("l").addEventListener("touchstart",(e)=>{e.preventDefault(); l=true;});
+document.getElementById("l").addEventListener("touchend",(e)=>{e.preventDefault(); l=false;});
+document.getElementById("r").addEventListener("touchstart",(e)=>{e.preventDefault(); r=true;});
+document.getElementById("r").addEventListener("touchend",(e)=>{e.preventDefault(); r=false;});
 
-window.addEventListener("touchstart",()=>{
-    if(gameOver) init();
-    else if(!b.active) b.active=true;
+window.addEventListener("touchstart",(e)=>{
+    let rect = c.getBoundingClientRect();
+    let touchY = e.touches[0].clientY;
+    let touchX = e.touches[0].clientX;
+    
+    // DEVAM butonuna basıldı mı? (Ekranın ortasındaki kutu)
+    if(levelUp && touchY > c.height/2+20 && touchY < c.height/2+100 && touchX > c.width/2-100 && touchX < c.width/2+100) {
+        level++;
+        init();
+    }
+    // TRY AGAIN butonuna basıldı mı?
+    else if(gameOver) { level=1; init(); }
+    else if(!b.active) { b.active=true; }
 });
 
 function loop() {
-    if(!gameOver) {
+    if(!gameOver && !levelUp) {
         if(l && p.x>0) p.x-=10;
         if(r && p.x<c.width-p.w) p.x+=10;
         
@@ -51,10 +72,12 @@ function loop() {
             b.x+=b.dx; b.y+=b.dy;
             if(b.x<b.r || b.x>c.width-b.r) b.dx*=-1;
             if(b.y<b.r) b.dy*=-1;
-            if(b.y>p.y && b.x>p.x && b.x<p.x+p.w) b.dy=-Math.abs(b.dy);
+            if(b.y>p.y-b.r && b.x>p.x && b.x<p.x+p.w) b.dy=-Math.abs(b.dy);
+            
             w.forEach((v,i)=>{
                 if(b.x>v.x && b.x<v.x+v.w && b.y>v.y && b.y<v.y+v.h) { w.splice(i,1); b.dy*=-1; }
             });
+            if(w.length === 0) levelUp = true;
             if(b.y>c.height) gameOver = true;
         } else {
             b.x=p.x+p.w/2; b.y=p.y-b.r;
@@ -63,13 +86,21 @@ function loop() {
     
     x.clearRect(0,0,c.width,c.height);
     x.fillStyle="white"; x.fillRect(p.x,p.y,p.w,p.h);
-    x.fillStyle="red"; x.beginPath(); x.arc(b.x,b.y,b.r,0,7); x.fill();
+    x.fillStyle="red"; x.beginPath(); x.arc(b.x,b.y,b.r,0,Math.PI*2); x.fill();
     x.fillStyle="cyan"; w.forEach(v=>x.fillRect(v.x,v.y,v.w,v.h));
+    
+    // Mesajlar
+    x.fillStyle="white"; x.font="20px Arial"; x.fillText("Level: "+level, 10, 30);
     
     if(gameOver) {
         x.fillStyle="blue"; x.fillRect(c.width/2-100, c.height/2-40, 200, 80);
-        x.fillStyle="white"; x.font="30px Arial"; x.textAlign="center";
-        x.fillText("TRY AGAIN", c.width/2, c.height/2+10);
+        x.fillStyle="white"; x.fillText("TRY AGAIN", c.width/2, c.height/2+10);
+    }
+    if(levelUp) {
+        x.fillStyle="green"; x.fillRect(c.width/2-100, c.height/2-40, 200, 140);
+        x.fillStyle="white"; x.fillText("LEVEL UP!", c.width/2, c.height/2);
+        x.fillStyle="yellow"; x.fillRect(c.width/2-100, c.height/2+20, 200, 60);
+        x.fillStyle="black"; x.fillText("DEVAM", c.width/2, c.height/2+60);
     }
     requestAnimationFrame(loop);
 }
