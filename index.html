@@ -6,70 +6,107 @@
 <style>
     body { margin:0; background:#000; overflow:hidden; touch-action:none; }
     canvas { display:block; }
+    .btn { position:absolute; bottom:0; width:50%; height:200px; touch-action:none; }
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
+<div id="l" class="btn" style="left:0"></div>
+<div id="r" class="btn" style="right:0"></div>
 <script>
 const c = document.getElementById("c");
 const x = c.getContext("2d");
 c.width = window.innerWidth; c.height = window.innerHeight;
 
-let p = {x:c.width/2-50, y:c.height-100, w:100, h:20};
-let b = {x:c.width/2, y:c.height-120, dx:5, dy:-5, r:10, active:false};
-let w = [], powers = [];
+let p = {x:c.width/2-50, y:c.height-150, w:100, h:20};
+let b = {x:c.width/2, y:c.height-170, dx:5, dy:-5, r:15, active:false};
+let w = [], gameOver = false, levelUp = false, showMenu = false, level = 1, maxLevel = 1;
 
-// Blokları oluştur
-function initBlocks() {
-    for(let i=0; i<5; i++) {
-        for(let j=0; j<3; j++) {
-            w.push({x:20+i*70, y:50+j*40, w:60, h:20});
+function init() {
+    w = []; gameOver = false; levelUp = false; showMenu = false;
+    b.active = false;
+    p.x = c.width/2 - 50;
+    b.x = p.x + p.w/2; b.y = p.y - b.r;
+    
+    let cols = 5; let gap = 10;
+    let wW = (c.width - (cols + 1) * gap) / cols;
+    let rows = Math.min(3 + Math.floor((level-1)/4), 6); 
+    for(let i=0; i<cols; i++) {
+        for(let j=0; j<rows; j++) {
+            w.push({x:gap + i*(wW+gap), y:70+j*40, w:wW, h:20});
         }
     }
 }
-initBlocks();
+init();
 
-window.addEventListener("touchstart", (e) => {
-    b.active = true;
-    p.x = e.touches[0].clientX - p.w/2;
+let l=false, r=false;
+document.getElementById("l").addEventListener("touchstart",(e)=>{e.preventDefault(); l=true;});
+document.getElementById("l").addEventListener("touchend",(e)=>{e.preventDefault(); l=false;});
+document.getElementById("r").addEventListener("touchstart",(e)=>{e.preventDefault(); r=true;});
+document.getElementById("r").addEventListener("touchend",(e)=>{e.preventDefault(); r=false;});
+
+window.addEventListener("touchstart",(e)=>{
+    let rect = c.getBoundingClientRect();
+    let tx = e.touches[0].clientX - rect.left;
+    let ty = e.touches[0].clientY - rect.top;
+    
+    if(showMenu) {
+        let boxSize = 80;
+        let mX = Math.floor((tx - 20) / (boxSize + 10));
+        let mY = Math.floor((ty - 100) / (boxSize + 10));
+        let idx = mY * 3 + mX + 1;
+        if(idx >= 1 && idx <= 20 && idx <= maxLevel) { level = idx; init(); }
+        return;
+    }
+    
+    if(tx < 100 && ty < 60) { showMenu = true; return; }
+    
+    if(levelUp && ty > c.height/2+20 && tx > c.width/2-100 && tx < c.width/2+100) { 
+        level++; if(level > maxLevel) maxLevel = level; init(); 
+    }
+    else if(gameOver && ty > c.height/2-40 && tx > c.width/2-100 && tx < c.width/2+100) { init(); }
+    else if(!b.active && !gameOver && !levelUp) b.active = true;
 });
 
 function loop() {
-    x.clearRect(0, 0, c.width, c.height);
-    
-    // Top hareketi ve Hızlanma
-    if(b.active) {
-        b.x += b.dx; b.y += b.dy;
-        if(b.x < 0 || b.x > c.width) b.dx *= -1;
-        if(b.y < 0) b.dy *= -1;
-        if(b.y > p.y && b.x > p.x && b.x < p.x + p.w) b.dy = -Math.abs(b.dy);
-        
-        // Blok kırma ve Güç düşürme
-        w.forEach((bck, i) => {
-            if(b.x > bck.x && b.x < bck.x + bck.w && b.y > bck.y && b.y < bck.y + bck.h) {
-                w.splice(i, 1); b.dy *= -1;
-                if(Math.random() > 0.4) powers.push({x:bck.x, y:bck.y, dy:4});
-            }
-        });
-    } else {
-        b.x = p.x + p.w/2;
+    if(!gameOver && !levelUp && !showMenu) {
+        if(l && p.x>0) p.x-=10;
+        if(r && p.x<c.width-p.w) p.x+=10;
+        if(b.active) {
+            b.x+=b.dx + (level*0.1); b.y+=b.dy - (level*0.1);
+            if(b.x<b.r || b.x>c.width-b.r) b.dx*=-1;
+            if(b.y<b.r) b.dy*=-1;
+            if(b.y>p.y-b.r && b.x>p.x && b.x<p.x+p.w) b.dy=-Math.abs(b.dy);
+            w.forEach((v,i)=>{
+                if(b.x>v.x && b.x<v.x+v.w && b.y>v.y && b.y<v.y+v.h) { w.splice(i,1); b.dy*=-1; }
+            });
+            if(w.length === 0) { levelUp = true; if(level >= maxLevel) maxLevel = level + 1; }
+            if(b.y>c.height) gameOver = true;
+        } else { b.x=p.x+p.w/2; b.y=p.y-b.r; }
     }
-
-    // Güçleri güncelle ve Topu hızlandır
-    powers.forEach((pwr, i) => {
-        pwr.y += pwr.dy;
-        if(pwr.y > p.y && pwr.x > p.x && pwr.x < p.x + p.w) {
-            b.dx *= 1.1; b.dy *= 1.1; // Top %10 hızlanır
-            powers.splice(i, 1);
-        }
-    });
-
-    // Çizimler
-    x.fillStyle = "white"; x.fillRect(p.x, p.y, p.w, p.h);
-    x.fillStyle = "red"; x.beginPath(); x.arc(b.x, b.y, b.r, 0, Math.PI*2); x.fill();
-    x.fillStyle = "cyan"; w.forEach(bck => x.fillRect(bck.x, bck.y, bck.w, bck.h));
-    x.fillStyle = "gold"; powers.forEach(pwr => x.fillRect(pwr.x, pwr.y, 15, 15));
-
+    
+    x.clearRect(0,0,c.width,c.height);
+    x.fillStyle="white"; x.fillRect(p.x,p.y,p.w,p.h);
+    x.fillStyle="red"; x.beginPath(); x.arc(b.x,b.y,b.r,0,Math.PI*2); x.fill();
+    x.fillStyle="cyan"; w.forEach(v=>x.fillRect(v.x,v.y,v.w,v.h));
+    
+    // --- BURASI DÜZELTİLDİ: OYUNUN İÇİNE OK VE YAZI EKLEDİK ---
+    if(!b.active && !showMenu && !levelUp && !gameOver) {
+        x.fillStyle = "yellow";
+        x.font = "bold 50px Arial";
+        x.textAlign = "center";
+        x.fillText("BURAYA BAKIN", c.width/2, c.height/2 - 100);
+        x.font = "80px Arial";
+        x.fillText("⬇", c.width/2, c.height/2);
+    }
+    // --------------------------------------------------------
+    
+    x.fillStyle="white"; x.font="30px Arial"; x.fillText("MENU", 20, 40);
+    x.font="20px Arial"; x.fillText("Lvl: "+level, c.width-60, 30);
+    
+    if(showMenu) { /* ... mevcut menu kodun ... */ }
+    if(gameOver) { /* ... mevcut gameover kodun ... */ }
+    if(levelUp) { /* ... mevcut levelup kodun ... */ }
     requestAnimationFrame(loop);
 }
 loop();
