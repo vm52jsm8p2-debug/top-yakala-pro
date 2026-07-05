@@ -1,33 +1,78 @@
 <!DOCTYPE html>
-<html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<style>
+    body { margin:0; background:#000; overflow:hidden; touch-action:none; }
+    canvas { display:block; }
+</style>
+</head>
 <body>
 <canvas id="c"></canvas>
 <script>
-    const c = document.getElementById("c");
-    const x = c.getContext("2d");
-    c.width = window.innerWidth;
-    c.height = window.innerHeight;
+const c = document.getElementById("c");
+const x = c.getContext("2d");
+c.width = window.innerWidth; c.height = window.innerHeight;
 
-    let b = {x: 100, y: 100, active: false};
+let p = {x:c.width/2-50, y:c.height-100, w:100, h:20};
+let b = {x:c.width/2, y:c.height-120, dx:5, dy:-5, r:10, active:false};
+let w = [], powers = [];
 
-    function loop() {
-        x.clearRect(0, 0, c.width, c.height);
-        
-        // Buraya bakın ve Ok
-        if (!b.active) {
-            x.fillStyle = "yellow";
-            x.font = "50px Arial";
-            x.textAlign = "center";
-            x.fillText("BURAYA BAKIN", c.width / 2, c.height / 2);
-            x.fillText("⬇", c.width / 2, c.height / 2 + 60);
+// Blokları oluştur
+function initBlocks() {
+    for(let i=0; i<5; i++) {
+        for(let j=0; j<3; j++) {
+            w.push({x:20+i*70, y:50+j*40, w:60, h:20});
         }
-
-        // Dokununca oyunu başlat
-        window.onclick = () => { b.active = true; };
-        
-        requestAnimationFrame(loop);
     }
-    loop();
+}
+initBlocks();
+
+window.addEventListener("touchstart", (e) => {
+    b.active = true;
+    p.x = e.touches[0].clientX - p.w/2;
+});
+
+function loop() {
+    x.clearRect(0, 0, c.width, c.height);
+    
+    // Top hareketi ve Hızlanma
+    if(b.active) {
+        b.x += b.dx; b.y += b.dy;
+        if(b.x < 0 || b.x > c.width) b.dx *= -1;
+        if(b.y < 0) b.dy *= -1;
+        if(b.y > p.y && b.x > p.x && b.x < p.x + p.w) b.dy = -Math.abs(b.dy);
+        
+        // Blok kırma ve Güç düşürme
+        w.forEach((bck, i) => {
+            if(b.x > bck.x && b.x < bck.x + bck.w && b.y > bck.y && b.y < bck.y + bck.h) {
+                w.splice(i, 1); b.dy *= -1;
+                if(Math.random() > 0.4) powers.push({x:bck.x, y:bck.y, dy:4});
+            }
+        });
+    } else {
+        b.x = p.x + p.w/2;
+    }
+
+    // Güçleri güncelle ve Topu hızlandır
+    powers.forEach((pwr, i) => {
+        pwr.y += pwr.dy;
+        if(pwr.y > p.y && pwr.x > p.x && pwr.x < p.x + p.w) {
+            b.dx *= 1.1; b.dy *= 1.1; // Top %10 hızlanır
+            powers.splice(i, 1);
+        }
+    });
+
+    // Çizimler
+    x.fillStyle = "white"; x.fillRect(p.x, p.y, p.w, p.h);
+    x.fillStyle = "red"; x.beginPath(); x.arc(b.x, b.y, b.r, 0, Math.PI*2); x.fill();
+    x.fillStyle = "cyan"; w.forEach(bck => x.fillRect(bck.x, bck.y, bck.w, bck.h));
+    x.fillStyle = "gold"; powers.forEach(pwr => x.fillRect(pwr.x, pwr.y, 15, 15));
+
+    requestAnimationFrame(loop);
+}
+loop();
 </script>
 </body>
 </html>
