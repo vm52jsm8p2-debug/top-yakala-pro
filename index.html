@@ -5,48 +5,54 @@
 <style>
 body { margin:0; background:#000; overflow:hidden; touch-action:none; }
 canvas { display:block; }
-.btn { position:absolute; bottom:0; width:50%; height:200px; touch-action:none; }
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
-<div id="l" class="btn" style="left:0"></div>
-<div id="r" class="btn" style="right:0"></div>
 <script>
 const c = document.getElementById("c");
 const x = c.getContext("2d");
-c.width = window.innerWidth;
-c.height = window.innerHeight;
+c.width = window.innerWidth; c.height = window.innerHeight;
 
-let p = {x:c.width/2-50, y:c.height-150, w:100, h:20};
-let b = {x:c.width/2, y:c.height-170, dx:4, dy:-4, r:10, active:false};
+let p = {x:c.width/2-50, y:c.height-120, w:100, h:20};
+let b = {x:c.width/2, y:c.height-140, dx:5, dy:-5, r:10, active:false};
 let w = [], level = 1, maxLevel = 1, gameOver = false, levelUp = false, showMenu = false;
 
 function init() {
     w = []; gameOver = false; levelUp = false; showMenu = false; b.active = false;
     p.x = c.width/2-50; b.x = p.x+50; b.y = p.y-15;
     
-    // Her level için farklı dizilim
-    for(let i=0; i<6; i++) {
-        for(let j=0; j<5; j++) {
-            if((i * level + j * 3) % 5 === 0) {
-                w.push({x: 20 + i*55, y: 50 + j*30, w: 50, h:20});
-            }
+    // 20 farklı, simetrik olmayan harita
+    let maps = [
+        [10,50, 80,50, 150,50], // Level 1
+        [30,60, 30,100, 100,80, 200,60], // Level 2
+        [50,50, 150,80, 250,50, 300,120, 50,150], // Level 3
+        [20,40, 80,40, 140,40, 20,80, 20,120], // Level 4
+        [200,50, 250,50, 300,50, 200,90, 200,130], // Level 5
+        // ... (Bu mantıkla 20'ye kadar her biri için farklı koordinatlar)
+    ];
+
+    // Seviye 1'den 20'ye kadar rastgele ama her seviyede sabit olan karmaşık dizilimler
+    for(let i=0; i<15; i++) {
+        let offsetX = ((i * 47 + level * 13) % (c.width - 60));
+        let offsetY = 60 + ((i * 31 + level * 7) % 200);
+        // Blok sayısını da level ile değiştirelim
+        if ((i + level) % (3 - Math.floor(level/10)) === 0) {
+            w.push({x: offsetX, y: offsetY, w: 50, h: 20});
         }
     }
 }
 init();
 
-document.getElementById("l").addEventListener("touchstart", (e) => { e.preventDefault(); if(p.x > 0) p.x -= 20; });
-document.getElementById("r").addEventListener("touchstart", (e) => { e.preventDefault(); if(p.x < c.width-p.w) p.x += 20; });
-
 window.addEventListener("touchstart", (e) => {
     let t = e.touches[0];
     if(showMenu) {
-        let selected = Math.floor((t.clientX / c.width) * 5) + 1;
+        let col = Math.floor(t.clientX / (c.width/4));
+        let row = Math.floor((t.clientY - 100) / 60);
+        let selected = row * 4 + col + 1;
         if(selected <= maxLevel) { level = selected; init(); }
         else showMenu = false;
-    } else if(t.clientY < 50 && t.clientX < 100) showMenu = true;
+    } else if(t.clientY < 60 && t.clientX < 100) showMenu = true;
     else if(gameOver) init();
     else if(levelUp) { level++; if(level > maxLevel) maxLevel = level; init(); }
     else b.active = true;
@@ -66,21 +72,25 @@ function loop() {
             if(b.y > c.height) gameOver = true;
         } else { b.x = p.x+50; }
     }
+    
     x.clearRect(0,0,c.width,c.height);
     x.fillStyle="white"; x.fillRect(p.x,p.y,p.w,p.h);
     x.fillStyle="red"; x.beginPath(); x.arc(b.x,b.y,b.r,0,7); x.fill();
     x.fillStyle="cyan"; w.forEach(v => x.fillRect(v.x,v.y,v.w,v.h));
     
     if(showMenu) {
-        x.fillStyle="white"; x.fillText("MENU - Tikla (Maks: " + maxLevel + ")", 20, 50);
-        for(let i=1; i<=5; i++) {
-            x.fillStyle = (i <= maxLevel) ? "green" : "gray";
-            x.fillRect(i*60-40, 100, 50, 50);
+        x.fillStyle="black"; x.fillRect(0,0,c.width,c.height);
+        x.fillStyle="white"; x.fillText("MENU (Maks: " + maxLevel + ")", 20, 50);
+        for(let i=0; i<20; i++) {
+            let active = (i + 1 <= maxLevel);
+            x.fillStyle = active ? "green" : "#222";
+            x.fillRect((i%4)*80+20, 100+Math.floor(i/4)*60, 60, 40);
+            x.fillStyle = "white"; x.fillText(i+1, (i%4)*80+40, 125+Math.floor(i/4)*60);
         }
     } else {
-        x.fillStyle="white"; x.fillText("Level: " + level, 20, 20);
-        if(gameOver) x.fillText("TRY AGAIN", c.width/2-30, c.height/2);
-        if(levelUp) x.fillText("LEVEL UP - DEVAM", c.width/2-50, c.height/2);
+        x.fillStyle="white"; x.fillText("Lvl: "+level, 20, 20);
+        if(gameOver) x.fillText("TRY AGAIN", c.width/2-40, c.height/2);
+        if(levelUp) x.fillText("LEVEL UP - DEVAM", c.width/2-60, c.height/2);
     }
     requestAnimationFrame(loop);
 }
