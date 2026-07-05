@@ -19,14 +19,18 @@ canvas { display:block; width:100vw; height:100vh; }
 const c = document.getElementById("c"), x = c.getContext("2d");
 c.width = window.innerWidth; c.height = window.innerHeight;
 let p = {x:c.width/2-50, y:c.height-150, w:100, h:20};
-let b = {x:c.width/2, y:200, dx:5, dy:5, r:15};
+let b = {x:0, y:0, dx:0, dy:0, r:15, active:false};
 let w = [], particles = [], lvl = 1;
+
+function resetBall() {
+    b.active = false;
+    b.x = p.x + p.w/2;
+    b.y = p.y - b.r;
+    b.dx = 0; b.dy = 0;
+}
 
 function initWalls() {
     w = []; particles = [];
-    let speedBonus = (lvl - 1) * 0.8;
-    b.dx = (b.dx > 0 ? 5 + speedBonus : -(5 + speedBonus));
-    b.dy = -(5 + speedBonus);
     let rows = 3, cols = 5, gap = 15;
     let cellW = (c.width - 40) / cols;
     let cellH = 30;
@@ -36,10 +40,22 @@ function initWalls() {
         }
     }
     document.getElementById("ui").innerText = "Seviye: " + lvl;
+    resetBall();
 }
 initWalls();
 
 let l=false, r=false;
+// Dokunmatik kontrol: Hareket ve başlatma
+function startGame() {
+    if(!b.active) {
+        let speed = 5 + (lvl - 1) * 0.8;
+        b.dx = (Math.random() > 0.5 ? speed : -speed);
+        b.dy = -speed;
+        b.active = true;
+    }
+}
+
+document.addEventListener("touchstart", startGame);
 document.getElementById("l").addEventListener("touchstart", (e) => { e.preventDefault(); l=true; });
 document.getElementById("l").addEventListener("touchend", () => l=false);
 document.getElementById("r").addEventListener("touchstart", (e) => { e.preventDefault(); r=true; });
@@ -48,36 +64,32 @@ document.getElementById("r").addEventListener("touchend", () => r=false);
 function update(){
     if(l && p.x>0) p.x-=10;
     if(r && p.x<c.width-p.w) p.x+=10;
-    b.x+=b.dx; b.y+=b.dy;
     
-    if(b.x < b.r || b.x > c.width-b.r) b.dx *= -1;
-    if(b.y < b.r) b.dy *= -1;
-    
-    if(b.y + b.r > p.y && b.y < p.y + p.h && b.x > p.x && b.x < p.x + p.w) b.dy = -Math.abs(b.dy);
-    
-    w.forEach((v,i)=>{
-        if(b.x + b.r > v.x && b.x - b.r < v.x + v.w && b.y + b.r > v.y && b.y - b.r < v.y + v.h){ 
-            // Patlama efekti: bloğun olduğu yere küçük parçacıklar ekle
-            for(let k=0; k<5; k++) particles.push({x:v.x+v.w/2, y:v.y+v.h/2, vx:(Math.random()-0.5)*10, vy:(Math.random()-0.5)*10, life:20});
-            w.splice(i,1); 
-            b.dy *= -1; 
-        }
-    });
-    
+    if(!b.active) {
+        b.x = p.x + p.w/2;
+        b.y = p.y - b.r;
+    } else {
+        b.x+=b.dx; b.y+=b.dy;
+        if(b.x < b.r || b.x > c.width-b.r) b.dx *= -1;
+        if(b.y < b.r) b.dy *= -1;
+        if(b.y + b.r > p.y && b.y < p.y + p.h && b.x > p.x && b.x < p.x + p.w) b.dy = -Math.abs(b.dy);
+        
+        w.forEach((v,i)=>{
+            if(b.x + b.r > v.x && b.x - b.r < v.x + v.w && b.y + b.r > v.y && b.y - b.r < v.y + v.h){ 
+                for(let k=0; k<5; k++) particles.push({x:v.x+v.w/2, y:v.y+v.h/2, vx:(Math.random()-0.5)*10, vy:(Math.random()-0.5)*10, life:20});
+                w.splice(i,1); b.dy *= -1; 
+            }
+        });
+        
+        if(w.length === 0) { lvl++; if(lvl>20) { alert("Tebrikler!"); lvl=1; } initWalls(); }
+        if(b.y > c.height) { lvl=1; initWalls(); }
+    }
+
     x.clearRect(0,0,c.width,c.height);
     x.fillStyle="white"; x.fillRect(p.x,p.y,p.w,p.h);
     x.fillStyle="red"; x.beginPath(); x.arc(b.x,b.y,b.r,0,Math.PI*2); x.fill();
     x.fillStyle="cyan"; w.forEach(v=>x.fillRect(v.x,v.y,v.w,v.h));
-    
-    // Parçacıkları güncelle ve çiz
-    particles.forEach((p, i) => {
-        p.x += p.vx; p.y += p.vy; p.life--;
-        x.fillStyle = "yellow"; x.fillRect(p.x, p.y, 4, 4);
-        if(p.life <= 0) particles.splice(i, 1);
-    });
-    
-    if(w.length === 0) { lvl++; if(lvl>20) { alert("Şampiyon!"); lvl=1; } initWalls(); b.x=c.width/2; b.y=200; }
-    if(b.y > c.height) { lvl=1; initWalls(); b.x=c.width/2; b.y=200; }
+    particles.forEach((p, i) => { p.x += p.vx; p.y += p.vy; p.life--; x.fillStyle="yellow"; x.fillRect(p.x, p.y, 4, 4); if(p.life<=0) particles.splice(i,1); });
     requestAnimationFrame(update);
 }
 update();
