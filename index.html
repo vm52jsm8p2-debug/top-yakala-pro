@@ -1,75 +1,33 @@
 <!DOCTYPE html>
 <html>
-<body style="margin:0; background:#000;">
+<body>
 <canvas id="c"></canvas>
 <script>
-const c = document.getElementById("c");
-const x = c.getContext("2d");
-c.width = window.innerWidth; c.height = window.innerHeight;
+    const c = document.getElementById("c");
+    const x = c.getContext("2d");
+    c.width = window.innerWidth;
+    c.height = window.innerHeight;
 
-let p = {x:c.width/2-50, y:c.height-100, w:100, h:20};
-let b = {x:c.width/2, y:c.height-120, dx:6, dy:-6, r:10, active:false};
-let w = [], pwr = [], level = 1;
+    let b = {x: 100, y: 100, active: false};
 
-function createBlocks() {
-    w = [];
-    for(let i=0; i<5; i++) {
-        for(let j=0; j<3; j++) {
-            w.push({x:20+i*70, y:50+j*40, w:60, h:20});
-        }
-    }
-}
-createBlocks();
-
-window.addEventListener("touchstart", (e) => {
-    if(!b.active) b.active = true;
-    let touchX = e.touches[0].clientX;
-    p.x = touchX - p.w/2;
-});
-
-function loop() {
-    x.clearRect(0,0,c.width,c.height);
-    
-    // Top ve Blok Mantığı
-    if(b.active) {
-        b.x += b.dx; b.y += b.dy;
-        if(b.x<0 || b.x>c.width) b.dx *= -1;
-        if(b.y<0) b.dy *= -1;
-        if(b.y>p.y && b.x>p.x && b.x<p.x+p.w) b.dy = -Math.abs(b.dy);
+    function loop() {
+        x.clearRect(0, 0, c.width, c.height);
         
-        w.forEach((bck, i) => {
-            if(b.x>bck.x && b.x<bck.x+bck.w && b.y>bck.y && b.y<bck.y+bck.h) {
-                w.splice(i, 1); b.dy *= -1;
-                if(Math.random() > 0.5) pwr.push({x:bck.x, y:bck.y, dy:4});
-            }
-        });
-    } else {
-        b.x = p.x + p.w/2;
-    }
-
-    // Güçler
-    pwr.forEach((item, i) => {
-        item.y += item.dy;
-        if(item.y > p.y && item.x > p.x && item.x < p.x+p.w) {
-            b.dx *= 1.2; b.dy *= 1.2; pwr.splice(i, 1);
+        // Buraya bakın ve Ok
+        if (!b.active) {
+            x.fillStyle = "yellow";
+            x.font = "50px Arial";
+            x.textAlign = "center";
+            x.fillText("BURAYA BAKIN", c.width / 2, c.height / 2);
+            x.fillText("⬇", c.width / 2, c.height / 2 + 60);
         }
-    });
 
-    // Çizimler
-    x.fillStyle = "white"; x.fillRect(p.x, p.y, p.w, p.h);
-    x.fillStyle = "red"; x.beginPath(); x.arc(b.x, b.y, b.r, 0, Math.PI*2); x.fill();
-    x.fillStyle = "cyan"; w.forEach(bck => x.fillRect(bck.x, bck.y, bck.w, bck.h));
-    x.fillStyle = "gold"; pwr.forEach(item => x.fillRect(item.x, item.y, 20, 20));
-
-    // OK VE YAZI
-    if(!b.active) {
-        x.fillStyle = "yellow"; x.font = "bold 50px Arial"; x.textAlign = "center";
-        x.fillText("BURAYA BAKIN", c.width/2, c.height/2);
-        x.fillText("⬇", c.width/2, c.height/2 + 60);
+        // Dokununca oyunu başlat
+        window.onclick = () => { b.active = true; };
+        
+        requestAnimationFrame(loop);
     }
-    requestAnimationFrame(loop);
-}
-loop();
+    loop();
 </script>
 </body>
 </html>
