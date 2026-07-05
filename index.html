@@ -1,16 +1,48 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        body { margin: 0; background: #000; color: #fff; text-align: center; font-family: sans-serif; }
-    </style>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<style>
+body { margin:0; background:#000; overflow:hidden; touch-action:none; }
+canvas { display:block; width:100vw; height:100vh; }
+.btn { position:absolute; bottom:0; width:50%; height:200px; }
+#l { left:0; }
+#r { right:0; }
+</style>
 </head>
 <body>
-    <h1>Oyun Hazır!</h1>
-    <p>Kod yüklendi, sorunsuz çalışıyor.</p>
-    <script>
-        console.log("Oyun kodları başarıyla aktif edildi.");
-    </script>
+<canvas id="c"></canvas>
+<div id="l" class="btn"></div>
+<div id="r" class="btn"></div>
+<script>
+const c = document.getElementById("c"), x = c.getContext("2d");
+c.width = window.innerWidth; c.height = window.innerHeight;
+let p = {x:c.width/2-50, y:c.height-150, w:100, h:20};
+let b = {x:c.width/2, y:200, dx:5, dy:5, r:10};
+let w = []; 
+for(let i=0; i<10; i++) w.push({x:i*(c.width/10), y:50, w:c.width/10-5, h:20});
+let l=false, r=false;
+document.getElementById("l").addEventListener("touchstart",()=>l=true);
+document.getElementById("l").addEventListener("touchend",()=>l=false);
+document.getElementById("r").addEventListener("touchstart",()=>r=true);
+document.getElementById("r").addEventListener("touchend",()=>r=false);
+function update(){
+    if(l && p.x>0) p.x-=10;
+    if(r && p.x<c.width-p.w) p.x+=10;
+    b.x+=b.dx; b.y+=b.dy;
+    if(b.x<0 || b.x>c.width) b.dx*=-1;
+    if(b.y<0) b.dy*=-1;
+    if(b.y>p.y && b.x>p.x && b.x<p.x+p.w) b.dy*=-1;
+    w.forEach((v,i)=>{
+        if(b.x>v.x && b.x<v.x+v.w && b.y<v.y+v.h){ w.splice(i,1); b.dy*=-1; }
+    });
+    x.clearRect(0,0,c.width,c.height);
+    x.fillStyle="white"; x.fillRect(p.x,p.y,p.w,p.h);
+    x.fillStyle="red"; x.beginPath(); x.arc(b.x,b.y,b.r,0,7); x.fill();
+    x.fillStyle="cyan"; w.forEach(v=>x.fillRect(v.x,v.y,v.w,v.h));
+    requestAnimationFrame(update);
+}
+update();
+</script>
 </body>
 </html>
