@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Süper Emir - Çift Joystick</title>
+    <title>Süper Emir - Çift Joystick Sabit</title>
     <style>
         * {
             box-sizing: border-box;
@@ -83,7 +83,7 @@
         let bullets = [];
         let enemies = [];
         let lastShotTime = 0;
-        const shotCooldown = 250; 
+        const shotCooldown = 200; 
 
         canvas.addEventListener("touchstart", (e) => {
             if (gameOver) return;
@@ -110,6 +110,8 @@
                     shootJoy.currentX = touchX;
                     shootJoy.currentY = touchY;
                     shootJoy.touchId = touch.identifier;
+                    shootX = 0;
+                    shootY = 0;
                 }
             }
         }, { passive: false });
@@ -125,7 +127,7 @@
 
                 if (moveJoy.active && touch.identifier === moveJoy.touchId) {
                     let dx = touchX - moveJoy.startX;
-                    let dy = touchY - moveJoy.startY;
+                    let dy = touchY - moveJoy.timezoneOffset || touchY - moveJoy.startY;
                     let dist = Math.hypot(dx, dy);
 
                     if (dist > moveJoy.maxRadius) {
@@ -153,9 +155,12 @@
                         shootJoy.currentX = touchX;
                         shootJoy.currentY = touchY;
                     }
-                    shootX = (shootJoy.currentX - shootJoy.startX) / shootJoy.maxRadius;
-                    shootY = (shootJoy.currentY - shootJoy.startY) / shootJoy.maxRadius;
-                    player.angle = Math.atan2(shootY, shootX);
+                    shootX = dx / shootJoy.maxRadius;
+                    shootY = dy / shootJoy.maxRadius;
+                    
+                    if (Math.hypot(dx, dy) > 10) {
+                        player.angle = Math.atan2(dy, dx);
+                    }
                 }
             }
         }, { passive: false });
@@ -232,7 +237,7 @@
 
             if (shootJoy.active) {
                 let currentTime = Date.now();
-                if (Math.hypot(shootX, shootY) > 0.3 && currentTime - lastShotTime > shotCooldown) {
+                if (Math.hypot(shootX, shootY) > 0.2 && currentTime - lastShotTime > shotCooldown) {
                     shoot(player.angle);
                     lastShotTime = currentTime;
                 }
