@@ -2,8 +2,13 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Top Yakala Pro</title>
+
+<!-- 🔥 UYGULAMA HALİNE GETİRME KODLARI -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="TopYakalaPro">
 
 <style>
   body {
@@ -11,6 +16,9 @@
     background: #111;
     overflow: hidden;
     font-family: Arial;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
   }
 
   canvas {
@@ -21,8 +29,8 @@
   /* 🔥 BÜYÜK SKOR */
   #score {
     position: absolute;
-    top: 10px;
-    left: 10px;
+    top: 40px; /* Uygulama modunda üst barla çakışmasın diye biraz aşağı alındı */
+    left: 20px;
     color: white;
     font-size: 32px;
     font-weight: bold;
@@ -32,16 +40,22 @@
   /* 🔥 BUTONLAR */
   .btn {
     position: absolute;
-    bottom: 20px;
-    width: 45%;
-    height: 70px;
+    bottom: 30px;
+    width: 43%;
+    height: 75px;
     border: none;
-    border-radius: 12px;
+    border-radius: 16px;
     background: #333;
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 10;
+    box-shadow: 0 6px #222;
+  }
+  
+  .btn:active {
+    transform: translateY(4px);
+    box-shadow: 0 2px #222;
   }
 
   #left { left: 5%; }
@@ -80,19 +94,19 @@ canvas.height = window.innerHeight;
 
 let score = 0;
 
-// oyuncu
+// oyuncu (tam okların üzerinde duruyor)
 let player = {
   x: canvas.width / 2 - 50,
-  y: canvas.height - 80,
+  y: canvas.height - 130, 
   w: 100,
-  h: 12,
-  speed: 7
+  h: 14,
+  speed: 8
 };
 
 // top
 let ball = {
   x: canvas.width / 2,
-  y: 100,
+  y: 120,
   r: 15,
   speedX: 5,
   speedY: 6
@@ -135,25 +149,21 @@ function resetGame() {
   document.getElementById("score").innerText = "Puan: " + score;
 
   ball.x = canvas.width / 2;
-  ball.y = 100;
+  ball.y = 120;
   ball.speedX = 5;
   ball.speedY = 6;
 }
 
 function update() {
-
-  // oyuncu
   if (left) player.x -= player.speed;
   if (right) player.x += player.speed;
 
   if (player.x < 0) player.x = 0;
   if (player.x + player.w > canvas.width) player.x = canvas.width - player.w;
 
-  // top
   ball.x += ball.speedX;
   ball.y += ball.speedY;
 
-  // duvar
   if (ball.x <= ball.r || ball.x >= canvas.width - ball.r) {
     ball.speedX *= -1;
   }
@@ -162,12 +172,10 @@ function update() {
     ball.speedY *= -1;
   }
 
-  // kaçırma = reset
   if (ball.y >= canvas.height - ball.r) {
     resetGame();
   }
 
-  // yakalama
   if (
     ball.y + ball.r >= player.y &&
     ball.x >= player.x &&
@@ -176,12 +184,9 @@ function update() {
   ) {
     score++;
     document.getElementById("score").innerText = "Puan: " + score;
-
     ball.speedY *= -1;
-
-    // hızlanma
-    ball.speedX *= 1.05;
-    ball.speedY *= 1.05;
+    ball.speedX *= 1.04;
+    ball.speedY *= 1.04;
   }
 }
 
