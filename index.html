@@ -3,9 +3,9 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <style>
-body { margin:0; background:#000; overflow:hidden; touch-action:none; }
+body { margin:0; background:#000; overflow:hidden; touch-action:none; user-select:none; -webkit-user-select:none; }
 canvas { display:block; width:100vw; height:100vh; }
-.btn { position:absolute; bottom:0; width:50%; height:200px; }
+.btn { position:absolute; bottom:0; width:50%; height:200px; user-select:none; -webkit-user-select:none; }
 #l { left:0; } #r { right:0; }
 #ui { position:absolute; top:10px; left:10px; color:white; font-family:sans-serif; font-size:20px; pointer-events:none; }
 </style>
@@ -27,8 +27,6 @@ function initWalls() {
     let speedBonus = (lvl - 1) * 0.8;
     b.dx = (b.dx > 0 ? 5 + speedBonus : -(5 + speedBonus));
     b.dy = -(5 + speedBonus);
-    
-    // Rastgele 10 duvar
     for(let i=0; i<10; i++) {
         w.push({ x: Math.random()*(c.width-60), y: 50+Math.random()*150, w:50, h:20 });
     }
@@ -37,10 +35,10 @@ function initWalls() {
 initWalls();
 
 let l=false, r=false;
-document.getElementById("l").addEventListener("touchstart",()=>l=true);
-document.getElementById("l").addEventListener("touchend",()=>l=false);
-document.getElementById("r").addEventListener("touchstart",()=>r=true);
-document.getElementById("r").addEventListener("touchend",()=>r=false);
+document.getElementById("l").addEventListener("touchstart", (e) => { e.preventDefault(); l=true; });
+document.getElementById("l").addEventListener("touchend", () => l=false);
+document.getElementById("r").addEventListener("touchstart", (e) => { e.preventDefault(); r=true; });
+document.getElementById("r").addEventListener("touchend", () => r=false);
 
 function update(){
     if(l && p.x>0) p.x-=10;
@@ -49,21 +47,11 @@ function update(){
     if(b.x<0 || b.x>c.width) b.dx*=-1;
     if(b.y<0) b.dy*=-1;
     if(b.y>p.y && b.x>p.x && b.x<p.x+p.w) b.dy*=-1;
-    
     w.forEach((v,i)=>{
         if(b.x>v.x && b.x<v.x+v.w && b.y<v.y+v.h){ w.splice(i,1); b.dy*=-1; }
     });
-    
-    if(w.length === 0) { 
-        lvl++; 
-        if (lvl > 20) { alert("Efsanesin! Oyunu bitirdin!"); lvl = 1; }
-        initWalls(); b.x=c.width/2; b.y=200; 
-    }
-    // Top yere değdiğinde:
-    if(b.y > c.height) { 
-        lvl=1; initWalls(); b.x=c.width/2; b.y=200; 
-    }
-
+    if(w.length === 0) { lvl++; if(lvl>20) { alert("Tebrikler!"); lvl=1; } initWalls(); b.x=c.width/2; b.y=200; }
+    if(b.y > c.height) { lvl=1; initWalls(); b.x=c.width/2; b.y=200; }
     x.clearRect(0,0,c.width,c.height);
     x.fillStyle="white"; x.fillRect(p.x,p.y,p.w,p.h);
     x.fillStyle="red"; x.beginPath(); x.arc(b.x,b.y,b.r,0,7); x.fill();
