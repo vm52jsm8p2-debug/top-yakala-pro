@@ -9,15 +9,16 @@
     let x = canvas.width / 2;
     let y = canvas.height - 30;
     
-    // Hız değerlerini 4'ten 8'e çıkardım, böylece top iki kat daha hızlı hareket eder
-    let dx = 8;
-    let dy = -8;
+    // Hız değerini 12 yaparak topu daha da hızlandırdım
+    let dx = 12;
+    let dy = -12;
     let ballRadius = 10;
 
     function drawBall() {
         ctx.beginPath();
         ctx.arc(x, y, ballRadius, 0, Math.PI * 2);
-        ctx.fillStyle = "#0095DD";
+        // Rengi kırmızı yaparak hız hissini artırdım
+        ctx.fillStyle = "#FF0000"; 
         ctx.fill();
         ctx.closePath();
     }
